@@ -40,7 +40,6 @@ const int MAX_ITERATION = 1;//1000;//1000000;//1000;
 const int SAMPLE_INTERVAL = 5;
 const size_t SAMPLE_NUM_NODE = 10;
 const double MERGE_RATIO = 0.3;
-
 //////////////////////////////////////////////////////////////////////////
 // Constructor and utility functions goes here
 
@@ -209,6 +208,22 @@ void Circuit::solve_init(){
 	clog<<"ratio =    "<<ratio  <<endl;*/
 
 	net_id.clear();
+}
+
+vector<string> Circuit::mark_special_nodes(){
+	vector<string> special_nodes_name;
+	//string name = "n0_0_1";
+	string name = "n0_1_2";
+	special_nodes_name.push_back(name);
+	//name = "n0_1_0";
+	name = "n0_3_3";
+	special_nodes_name.push_back(name);
+	//name = "n0_1_1";
+	name = "n0_1_0";
+	special_nodes_name.push_back(name);
+	name = "n0_2_0";
+	special_nodes_name.push_back(name);	
+	return special_nodes_name;
 }
 
 // partition the circuit to X_BLOCKS * Y_BLOCKS blocks
@@ -1161,6 +1176,23 @@ double Circuit::locate_maxIRdrop(){
 		double IR_drop = VDD - nodelist[i]->value;		
 		if(IR_drop > max_IRdrop)
 			max_IRdrop = IR_drop;
+	}
+	return max_IRdrop;
+}
+
+double Circuit::locate_special_maxIRdrop(){
+	vector<string> special_nodes_name = 
+		mark_special_nodes();
+	double max_IRdrop = 0;
+	for(size_t i=0;i<nodelist.size()-1;i++){
+		for(size_t j=0;j<special_nodes_name.size
+			(); j++){
+			if(nodelist[i]->name == special_nodes_name[j]){
+				double IR_drop = VDD - nodelist[i]->value;		
+				if(IR_drop > max_IRdrop)
+					max_IRdrop = IR_drop;
+			}
+		}
 	}
 	return max_IRdrop;
 }

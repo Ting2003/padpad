@@ -102,7 +102,9 @@ int main(int argc, char * argv[]){
 			clog<<"Solving "<<ckt->get_name()<<endl;
 			ckt->solve();
 			double max_IRdrop = ckt->locate_maxIRdrop();
+			double special_IRdrop = ckt->locate_special_maxIRdrop();
 			clog<<"max IRdrop is: "<<max_IRdrop<<endl;
+			clog<<"special IRdrop is: "<<special_IRdrop<<endl;
 
 			cktlist[i]->print();
 			clog<<endl;

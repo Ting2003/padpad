@@ -84,7 +84,12 @@ public:
 	friend ostream & operator << (ostream & os, const Circuit & ckt);
 	friend class Parser;
 
+	////// new functions for pad /////
 	double locate_maxIRdrop();
+	double locate_special_maxIRdrop();
+	vector<string> mark_special_nodes();
+	////// new functions for pad /////
+
 
 	// C style output
 	void print();
