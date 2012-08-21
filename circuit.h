@@ -88,6 +88,11 @@ public:
 	double locate_maxIRdrop();
 	double locate_special_maxIRdrop();
 	vector<string> mark_special_nodes();
+	void build_pad_set();
+	////// new member for pad //////
+	
+	double max_IRdrop;
+	vector<Node*> VDD_pad_set;
 	////// new functions for pad /////
 
 
@@ -209,7 +214,6 @@ private:
 	NodePtrVector sample;
 
 	double VDD;
-	double max_IRdrop;
 };
 
 inline size_t Circuit::get_total_num_layer(){return layer_dir.size();}

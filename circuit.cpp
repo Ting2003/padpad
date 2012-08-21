@@ -1196,3 +1196,13 @@ double Circuit::locate_special_maxIRdrop(){
 	}
 	return max_IRdrop;
 }
+
+void Circuit::build_pad_set(){
+	VDD_pad_set.resize(0);
+	for(size_t i=0;i<nodelist.size()-1;i++){
+		if(nodelist[i]->isX())
+			VDD_pad_set.push_back(nodelist[i]);
+	}
+	for(size_t j=0;j<VDD_pad_set.size();j++)
+		clog<<"pad: "<<*VDD_pad_set[j]<<endl;
+}
