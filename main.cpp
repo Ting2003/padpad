@@ -105,7 +105,7 @@ int main(int argc, char * argv[]){
 			double special_IRdrop = ckt->locate_special_maxIRdrop();
 			clog<<"max IRdrop is: "<<max_IRdrop<<endl;
 			clog<<"special IRdrop is: "<<special_IRdrop<<endl;
-			ckt->build_pad_set();
+			//ckt->build_pad_set();
 			cktlist[i]->print();
 			clog<<endl;
 			// after that, this circuit can be released

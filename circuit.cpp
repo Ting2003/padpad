@@ -163,6 +163,7 @@ void Circuit::print(){
 // 3. find node in which block, update count
 // 4. get representative lists
 void Circuit::solve_init(){
+	build_pad_set();
 	sort_nodes();
 
 	size_t size = nodelist.size() - 1;
@@ -212,17 +213,10 @@ void Circuit::solve_init(){
 
 vector<string> Circuit::mark_special_nodes(){
 	vector<string> special_nodes_name;
-	//string name = "n0_0_1";
-	string name = "n0_1_2";
+	//string name = "n0_1_1";
+	//special_nodes_name.push_back(name);
+	name = "n0_150_100";
 	special_nodes_name.push_back(name);
-	//name = "n0_1_0";
-	name = "n0_3_3";
-	special_nodes_name.push_back(name);
-	//name = "n0_1_1";
-	name = "n0_1_0";
-	special_nodes_name.push_back(name);
-	name = "n0_2_0";
-	special_nodes_name.push_back(name);	
 	return special_nodes_name;
 }
 
@@ -1188,7 +1182,9 @@ double Circuit::locate_special_maxIRdrop(){
 		for(size_t j=0;j<special_nodes_name.size
 			(); j++){
 			if(nodelist[i]->name == special_nodes_name[j]){
-				double IR_drop = VDD - nodelist[i]->value;		
+				double IR_drop = VDD - nodelist[i]->value;	
+				clog<<"special node, value, IR: "<<nodelist[i]->name<<" "<<
+					nodelist[i]->value<<" "<<IR_drop<<endl;	
 				if(IR_drop > max_IRdrop)
 					max_IRdrop = IR_drop;
 			}
@@ -1206,3 +1202,8 @@ void Circuit::build_pad_set(){
 	for(size_t j=0;j<VDD_pad_set.size();j++)
 		clog<<"pad: "<<*VDD_pad_set[j]<<endl;
 }
+
+// record the value of shortest path from a pad to 
+// all special nodes
+//void Circuit::build_weighted_shortest_path(){
+//}
