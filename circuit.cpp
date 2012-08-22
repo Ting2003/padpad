@@ -213,13 +213,12 @@ void Circuit::solve_init(){
 	net_id.clear();
 }
 
-vector<string> Circuit::mark_special_nodes(){
-	vector<string> special_nodes_name;
-	//string name = "n0_1_1";
-	//special_nodes_name.push_back(name);
-	name = "n0_150_100";
-	special_nodes_name.push_back(name);
-	return special_nodes_name;
+void Circuit::mark_special_nodes(){
+	special_nodes.clear();
+	for(size_t i=0;i<nodelist.size()-1;i++){
+		if(nodelist[i]->name == "n0_150_100")
+			special_nodes.push_back(nodelist[i]);
+	}
 }
 
 // partition the circuit to X_BLOCKS * Y_BLOCKS blocks
@@ -1177,13 +1176,12 @@ double Circuit::locate_maxIRdrop(){
 }
 
 double Circuit::locate_special_maxIRdrop(){
-	vector<string> special_nodes_name = 
-		mark_special_nodes();
+	mark_special_nodes();
 	double max_IRdrop = 0;
 	for(size_t i=0;i<nodelist.size()-1;i++){
-		for(size_t j=0;j<special_nodes_name.size
-			(); j++){
-			if(nodelist[i]->name == special_nodes_name[j]){
+		for(size_t j=0;j<special_nodes.size(); 
+			j++){
+			if(nodelist[i]->name == special_nodes[j]->name){
 				double IR_drop = VDD - nodelist[i]->value;	
 				clog<<"special node, value, IR: "<<nodelist[i]->name<<" "<<
 					nodelist[i]->value<<" "<<IR_drop<<endl;	
@@ -1209,7 +1207,7 @@ void Circuit::build_pad_set(){
 		clog<<"pad: "<<*pad_set[j]->node<<endl;
 }
 
-// record the value of shortest path from a pad to 
-// all special nodes
-//void Circuit::build_weighted_shortest_path(){
-//}
+// expand the region for each node, covering 10 pads
+void Circuit::expand_region(){
+		
+}

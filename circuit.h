@@ -19,6 +19,7 @@
 #include <vector>
 #include <tr1/unordered_map>
 #include <map>
+#include <queue>
 #include <list>
 #include <cmath>
 #include "cholmod.h"
@@ -88,14 +89,15 @@ public:
 	////// new functions for pad /////
 	double locate_maxIRdrop();
 	double locate_special_maxIRdrop();
-	vector<string> mark_special_nodes();
+	void mark_special_nodes();
 	void build_pad_set();
 	////// new member for pad //////
 	
 	double max_IRdrop;
 	vector<Pad*> pad_set;
+	vector<Node*> special_nodes;
 	////// new functions for pad /////
-
+	void expand_region();
 
 	// C style output
 	void print();

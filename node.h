@@ -59,6 +59,15 @@ public:
 
 	size_t rid;		// id in rep_list
 
+	//////// member and function for pad //////
+	bool visit_flag;
+	bool region_flag;
+	
+	void set_visit_flag();
+	void set_region_flag();
+	bool isVisited() const;
+	bool inRegion() const;	
+	//////// end function for pad ////
 private:
 	double value;		// voltage
 	bool flag;		// mark if the node is an X
@@ -110,5 +119,16 @@ inline bool Node::is_mergeable() const{
 	    ||(nbr[NORTH] != NULL && nbr[SOUTH] != NULL &&
 	       nbr[EAST]  == NULL && nbr[WEST] == NULL));
 }
+
+inline void Node::set_visit_flag(){
+	visit_flag = true;
+}
+
+inline void Node::set_region_flag(){
+	region_flag = true;
+}
+
+inline bool Node::isVisited() const{return visit_flag;}
+inline bool Node::inRegion() const{return region_flag;}
 
 #endif
