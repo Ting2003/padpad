@@ -1,7 +1,7 @@
 CC=g++
 #CPLUSPLUS=g++
 SRC= util.cpp point.cpp node.cpp circuit.cpp net.cpp parser.cpp vec.cpp \
-    main.cpp triplet.cpp algebra.cpp block.cpp 
+    main.cpp triplet.cpp algebra.cpp block.cpp pad.cpp 
 #hash_mat.cpp map_mat.cpp 
 HDR=$(SRC:.cpp=.h)
 OBJ=$(SRC:.cpp=.o) 

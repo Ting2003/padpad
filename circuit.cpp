@@ -29,6 +29,7 @@
 #include "util.h"
 #include "algebra.h"
 #include "node.h"
+#include "pad.h"
 using namespace std;
 
 double Circuit::EPSILON = 1e-5;
@@ -46,9 +47,10 @@ const double MERGE_RATIO = 0.3;
 vector<LAYER_DIR> Circuit::layer_dir(MAX_LAYER);
 
 // constructor of Circuit class, name is optional
-Circuit::Circuit(string _name):name(_name),
+Circuit::Circuit(string _name): 
+	max_IRdrop(0), name(_name),
 	x_min(INFTY),y_min(INFTY),x_max(0),y_max(0),
-	circuit_type(UNKNOWN), VDD(0.0), max_IRdrop(0){
+	circuit_type(UNKNOWN),VDD(0.0) {
 	// add ground node
 	Node * gnd = new Node(string("0"), Point(-1,-1,-1));
 	gnd->rep = gnd;
@@ -199,10 +201,10 @@ void Circuit::solve_init(){
 		}
 	}// end of for i
 
-	size_t n_merge = mergelist.size();
-	size_t n_nodes = nodelist.size();
-	size_t n_reps  = replist.size();
-	double ratio = n_merge / (double) (n_merge + n_reps);
+	//size_t n_merge = mergelist.size();
+	//size_t n_nodes = nodelist.size();
+	//size_t n_reps  = replist.size();
+	//double ratio = n_merge / (double) (n_merge + n_reps);
 	/*clog<<"mergeable  "<<n_merge<<endl;
 	clog<<"replist    "<<n_reps <<endl;
 	clog<<"nodelist   "<<n_nodes<<endl;
@@ -323,7 +325,7 @@ void Circuit::stamp_block_matrix(){
 			break;
 		case CURRENT:
 			for(it=ns.begin();it!=ns.end();++it)
-				stamp_block_current((*it), A);
+				stamp_block_current((*it));
 			break;
 		case VOLTAGE:
 			for(it=ns.begin();it!=ns.end();++it){
@@ -531,7 +533,7 @@ void Circuit::solve_LU_core(){
 	bp = static_cast<double *> (b->x);
 	Matrix A;
 	stamp_by_set(A, bp);
-	make_A_symmetric(A, bp);
+	make_A_symmetric(bp);
 	//A.merge();
 
 	A.set_row(replist.size());
@@ -767,7 +769,7 @@ void Circuit::stamp_by_set(Matrix & A, double* b){
 	}
 }
 
-void Circuit::make_A_symmetric(Matrix &A, double *b){
+void Circuit::make_A_symmetric(double *b){
 	int type = RESISTOR;
 	NetList & ns = net_set[type];
 	NetList::iterator it;
@@ -925,7 +927,7 @@ void Circuit::stamp_block_resistor(Net * net, Matrix * A){
 	}// end of for j	
 }
 
-void Circuit::stamp_block_current(Net * net, Matrix * A){
+void Circuit::stamp_block_current(Net * net){
 	Node * nk = net->ab[0]->rep;
 	Node * nl = net->ab[1]->rep;
 	if( !nk->is_ground() && !nk->isX() ) { 
@@ -1194,13 +1196,17 @@ double Circuit::locate_special_maxIRdrop(){
 }
 
 void Circuit::build_pad_set(){
-	VDD_pad_set.resize(0);
+	pad_set.resize(0);
+	//static Pad pad_a;
 	for(size_t i=0;i<nodelist.size()-1;i++){
-		if(nodelist[i]->isX())
-			VDD_pad_set.push_back(nodelist[i]);
+		if(nodelist[i]->isX()){
+			Pad *pad_ptr = new Pad();
+			pad_ptr->node = nodelist[i];
+			pad_set.push_back(pad_ptr);
+		}
 	}
-	for(size_t j=0;j<VDD_pad_set.size();j++)
-		clog<<"pad: "<<*VDD_pad_set[j]<<endl;
+	for(size_t j=0;j<pad_set.size();j++)
+		clog<<"pad: "<<*pad_set[j]->node<<endl;
 }
 
 // record the value of shortest path from a pad to 

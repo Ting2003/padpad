@@ -27,6 +27,7 @@
 #include "net.h"
 #include "vec.h"
 #include "triplet.h"
+#include "pad.h"
 #include "block.h"
 using namespace std;
 using namespace std::tr1;
@@ -92,7 +93,7 @@ public:
 	////// new member for pad //////
 	
 	double max_IRdrop;
-	vector<Node*> VDD_pad_set;
+	vector<Pad*> pad_set;
 	////// new functions for pad /////
 
 
@@ -127,14 +128,14 @@ private:
 	void stamp_current(double* b, Net * net);
 	void stamp_VDD(Matrix & A, double* b, Net * net);
 	
-	void make_A_symmetric(Matrix &A, double *bp);
+	void make_A_symmetric(double *bp);
 	void make_A_symmetric_block();
 
 	void stamp_block_matrix();
 	void stamp_boundary_matrix();
 	void stamp_boundary_net(Net * net);
 	void stamp_block_resistor(Net *net, Matrix * A);
-	void stamp_block_current(Net * net, Matrix * A);
+	void stamp_block_current(Net * net);
 	void stamp_block_VDD(Net * net, Matrix * A);
 
 	void update_block_rhs(Block & block, int dir);
