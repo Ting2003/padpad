@@ -62,9 +62,8 @@ public:
 	//////// member and function for pad //////
 	bool visit_flag;
 	bool region_flag;
+	double distance;
 	
-	void set_visit_flag();
-	void set_region_flag();
 	bool isVisited() const;
 	bool inRegion() const;	
 	//////// end function for pad ////
@@ -118,14 +117,6 @@ inline bool Node::is_mergeable() const{
 	       nbr[NORTH] == NULL && nbr[SOUTH] == NULL)
 	    ||(nbr[NORTH] != NULL && nbr[SOUTH] != NULL &&
 	       nbr[EAST]  == NULL && nbr[WEST] == NULL));
-}
-
-inline void Node::set_visit_flag(){
-	visit_flag = true;
-}
-
-inline void Node::set_region_flag(){
-	region_flag = true;
 }
 
 inline bool Node::isVisited() const{return visit_flag;}

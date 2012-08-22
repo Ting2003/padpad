@@ -98,6 +98,8 @@ public:
 	vector<Node*> special_nodes;
 	////// new functions for pad /////
 	void expand_region();
+	void expand_region_of_a_node(Node *nd_s);
+	void update_queue(queue<Node*> &q, Node *nd, int &count, int pad_number);
 
 	// C style output
 	void print();

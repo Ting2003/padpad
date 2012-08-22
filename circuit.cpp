@@ -1207,7 +1207,62 @@ void Circuit::build_pad_set(){
 		clog<<"pad: "<<*pad_set[j]->node<<endl;
 }
 
-// expand the region for each node, covering 10 pads
+// expand the regions for all the special nodes
 void Circuit::expand_region(){
-		
+	Node *nd;
+	for(size_t i=0;i<special_nodes.size();i++){
+		nd = special_nodes[i];
+		// mark nodes with region flag
+		expand_region_of_a_node(nd);
+
+		// find the weighted shortest_path for 
+		// all nodes in the region of this node
+		find_shortest_paths(nd);
+	}
+	
 }
+
+// expand the region for each node, covering 10 pads
+void Circuit::expand_region_of_a_node(Node *nds){
+	// stop when reaching pad_number
+	int pad_number = 10; 	
+	int count = 0;
+	queue<Node*> q;
+	q.push(nds);
+	nds->region_flag = true;
+	while(count <= pad_number || !q.empty()){
+		Node * nd = q.front();
+		// add neighboring nodes into queue
+		update_queue(q, nd, count, pad_number);
+		q.pop();
+	}
+}
+
+void Circuit::update_queue(queue<Node*> &q, Node *nd, int &count, int pad_number){
+	Net * net; Node *nbr;
+	Node *na, *nb;
+	for(int i=0;i<6;i++){
+		if(count >=pad_number) break;
+		net = nd->nbr[i];
+		if(net==NULL) continue;
+		// find the other node, which is nbr
+		na = net->ab[0];
+		nb = net->ab[1];
+		if(nd->name == na->name)
+			nbr = nb;
+		else	nbr = na;
+		if(!nbr->is_ground()&& !nbr->region_flag){
+			q.push(nbr);
+			nbr->region_flag = true;
+			if(nbr->isX()== true)
+				count ++;
+		}
+	}
+}
+
+// find weighted paths from source node nds to all nodes
+// in the region
+void Circuit::find_shortest_paths(Node *nds){
+			
+}
+
