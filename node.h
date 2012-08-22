@@ -62,6 +62,7 @@ public:
 	//////// member and function for pad //////
 	bool visit_flag;
 	bool region_flag;
+	bool traverse_flag;
 	double distance;
 	
 	bool isVisited() const;

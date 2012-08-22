@@ -100,6 +100,12 @@ public:
 	void expand_region();
 	void expand_region_of_a_node(Node *nd_s);
 	void update_queue(queue<Node*> &q, Node *nd, int &count, int pad_number);
+	void find_shortest_paths(Node *nds);
+	Node* update_distance(Node *nd, 
+		vector<Node *> &front_nodes);
+	Node* min_dist_front_node(vector<Node*> 
+		front_nodes);
+	//////// end functions for pad ////////
 
 	// C style output
 	void print();

@@ -1263,6 +1263,72 @@ void Circuit::update_queue(queue<Node*> &q, Node *nd, int &count, int pad_number
 // find weighted paths from source node nds to all nodes
 // in the region
 void Circuit::find_shortest_paths(Node *nds){
-			
+	Node *nds_old;
+	Node *nds_new = NULL;
+	nds_old = nds;
+	nds_old->distance = 0;
+	nds_old->visit_flag = true;
+	nds_old->traverse_flag = true;
+	// stores all front end nodes
+	vector<Node*> front_nodes;
+	do{
+		nds_new = update_distance(nds_old, 
+			front_nodes);
+		nds_old = nds_new;
+	}while(nds_new !=NULL);
 }
 
+Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
+	Net * net; Node *nbr;
+	Node *na, *nb;
+	for(int i=0;i<6;i++){
+		net = nd->nbr[i];
+		if(net==NULL) continue;
+		// find neighboring nodes
+		na = net->ab[0];
+		nb = net->ab[1];
+		if(nd->name == na->name)
+			nbr = nb;
+		else	nbr = na;
+		if(nbr->region_flag == false) continue;
+		if(!nbr->is_ground()&& !nbr->visit_flag){
+			// assign initial weight
+			double distance = nd->distance + 1.0/net->value;
+			if(nbr->distance == -1 || 
+			   distance < nbr->distance)
+				nbr->distance = distance;
+
+			// if node is not traversed yet	
+			if(!nbr->traverse_flag)
+				front_nodes.push_back(nbr);
+		}
+		nbr->traverse_flag = true;
+	}
+	// select the least distance node from 
+	// front_nodes
+	Node *nds_new = min_dist_front_node(front_nodes);
+	if(nds_new !=NULL)
+		nds_new->visit_flag = true;			
+	return nds_new;
+}
+
+Node* Circuit::min_dist_front_node(vector<Node*> front_nodes){
+	Node *nd;
+	Node *min_dist_nd;
+	min_dist_nd = NULL;
+	double min_dist = -1.0;
+	for(size_t i=0;i<front_nodes.size();i++){
+		nd = front_nodes[i];
+		if(nd->visit_flag == true) continue;			 if(i==0){
+			min_dist = nd->distance;
+			min_dist_nd = nd;
+		}			
+		else{
+			if(nd->distance < min_dist){
+				min_dist = nd->distance;
+				min_dist_nd = nd;
+			}
+		}
+	}
+	return min_dist_nd;
+}
