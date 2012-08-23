@@ -1184,8 +1184,8 @@ double Circuit::locate_special_maxIRdrop(){
 			j++){
 			if(nodelist[i]->name == special_nodes[j]->name){
 				double IR_drop = VDD - nodelist[i]->value;	
-				clog<<endl<<"special node, value, IR: "<<nodelist[i]->name<<" "<<
-					nodelist[i]->value<<" "<<IR_drop<<endl;	
+				//clog<<endl<<"special node, value, IR: "<<nodelist[i]->name<<" "<<
+					//nodelist[i]->value<<" "<<IR_drop<<endl;	
 				if(IR_drop > max_IRdrop)
 					max_IRdrop = IR_drop;
 			}
@@ -1204,8 +1204,8 @@ void Circuit::build_pad_set(){
 			pad_set.push_back(pad_ptr);
 		}
 	}
-	for(size_t j=0;j<pad_set.size();j++)
-		clog<<"pad: "<<*pad_set[j]->node<<endl;
+	//for(size_t j=0;j<pad_set.size();j++)
+		//clog<<"pad: "<<*pad_set[j]->node<<endl;
 }
 
 // expand the regions for all the special nodes
@@ -1213,19 +1213,19 @@ void Circuit::expand_region(){
 	Node *nd;
 	for(size_t i=0;i<special_nodes.size();i++){
 		nd = special_nodes[i];
-		cout<<endl<<"special node: "<<*nd<<endl;
+		//cout<<endl<<"special node: "<<*nd<<endl;
 		// mark nodes with region flag
 		expand_region_of_a_node(nd);
-		cout<<endl<<" before shortest path. "<<endl;
 		// find the weighted shortest_path for 
 		// all nodes in the region of this node
 		find_shortest_paths(nd);
-		print_distance();
+		//print_distance();
 		map_min_dist_to_pad(nd);
 		// clear region, traversal, visit flag
 		clear_flags();
 	}
-	
+
+	print_pad_map();
 }
 
 // expand the region for each node, covering 10 pads
@@ -1237,12 +1237,18 @@ void Circuit::expand_region_of_a_node(Node *nds){
 	q.push(nds);
 	nds->region_flag = true;
 
-	cout<<"nds: "<<*nds<<endl;
+	//cout<<"nds: "<<*nds<<endl;
 	while(count < pad_number || !q.empty()){
 		Node * nd = q.front();
 		// add neighboring nodes into queue
 		update_queue(q, nd, count, pad_number);
 		q.pop();
+		if(count == pad_number){
+			while(!q.empty()){
+				q.pop();
+			}
+			break;
+		}
 	}
 }
 
@@ -1265,7 +1271,7 @@ void Circuit::update_queue(queue<Node*> &q, Node *nd, int &count, int pad_number
 			nbr->region_flag = true;
 			if(nbr->isX()== true){
 				count ++;
-				cout<<"add a new pad: "<<*nbr<<" "<<count<<endl;
+				//cout<<"add a new pad: "<<*nbr<<" "<<count<<endl;
 			}
 		}
 	}
@@ -1325,7 +1331,7 @@ Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
 	// front_nodes
 	Node *nds_new = min_dist_front_node(front_nodes);
 	if(nds_new !=NULL){
-		cout<<"new min dist node: "<<*nds_new<<endl;
+		//cout<<"new min dist node: "<<*nds_new<<endl;
 		nds_new->visit_flag = true;
 	}
 	return nds_new;
@@ -1339,7 +1345,7 @@ Node* Circuit::min_dist_front_node(vector<Node*> front_nodes){
 	for(size_t i=0;i<front_nodes.size();i++){
 		nd = front_nodes[i];
 		if(nd->visit_flag == true) continue;
-		cout<<"front_node: "<<*nd<<" "<<nd->distance<<endl;
+		//cout<<"front_node: "<<*nd<<" "<<nd->distance<<endl;
 		if(min_dist == -1.0){
 			min_dist = nd->distance;
 			min_dist_nd = nd;
@@ -1367,8 +1373,6 @@ void Circuit::map_min_dist_to_pad(Node *nds){
 	Pad *nd;
 	Node *ndt;
 	pair<Node*, double> pad_pair;
-	map<Node*, double>::iterator it;
-	cout<<endl;
 	for(size_t i=0;i<pad_set.size();i++){
 		nd = pad_set[i];
 		ndt = nd->node;
@@ -1376,12 +1380,22 @@ void Circuit::map_min_dist_to_pad(Node *nds){
 			pad_pair.first = nds;
 			pad_pair.second = ndt->distance;
 			nd->control_nodes.insert(pad_pair);
-		}
+		}	
+	}	
+}
+
+void Circuit::print_pad_map(){
+	Pad *nd;
+	pair<Node*, double> pad_pair;
+	map<Node*, double>::iterator it;
+	for(size_t i=0;i<pad_set.size();i++){
+		nd = pad_set[i];
+
+		cout<<endl<<"pad_node: "<<*nd->node<<endl;
 		for(it = nd->control_nodes.begin();it != nd->control_nodes.end();it++){
-			cout<<"pad_node: "<<*nd->node<<endl;
 			cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
 		}
-	}	
+	}
 }
 
 void Circuit::clear_flags(){

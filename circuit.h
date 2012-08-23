@@ -107,6 +107,7 @@ public:
 	Node* min_dist_front_node(vector<Node*> 
 		front_nodes);
 	void print_distance();
+	void print_pad_map();
 	void clear_flags();
 	//////// end functions for pad ////////
 
