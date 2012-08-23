@@ -216,7 +216,7 @@ void Circuit::solve_init(){
 void Circuit::mark_special_nodes(){
 	special_nodes.clear();
 	for(size_t i=0;i<nodelist.size()-1;i++){
-		if(nodelist[i]->name == "n0_150_100")
+		if(nodelist[i]->name == "n0_0_0")//"n0_150_100")
 			special_nodes.push_back(nodelist[i]);
 	}
 }
@@ -1215,10 +1215,11 @@ void Circuit::expand_region(){
 		cout<<"special node: "<<*nd<<endl;
 		// mark nodes with region flag
 		expand_region_of_a_node(nd);
-
+		cout<<endl<<" before shortest path. "<<endl;
 		// find the weighted shortest_path for 
 		// all nodes in the region of this node
 		find_shortest_paths(nd);
+		print_distance();
 	}
 	
 }
@@ -1226,11 +1227,12 @@ void Circuit::expand_region(){
 // expand the region for each node, covering 10 pads
 void Circuit::expand_region_of_a_node(Node *nds){
 	// stop when reaching pad_number
-	int pad_number = 5; 	
+	int pad_number = 1; 	
 	int count = 0;
 	queue<Node*> q;
 	q.push(nds);
 	nds->region_flag = true;
+
 	cout<<"nds: "<<*nds<<endl;
 	while(count < pad_number || !q.empty()){
 		Node * nd = q.front();
@@ -1276,11 +1278,17 @@ void Circuit::find_shortest_paths(Node *nds){
 	nds_old->traverse_flag = true;
 	// stores all front end nodes
 	vector<Node*> front_nodes;
-	do{
+	for(size_t i=0;i<11;i++){
+	//do{
 		nds_new = update_distance(nds_old, 
 			front_nodes);
+
+		if(nds_new == NULL){
+			break;
+		}
 		nds_old = nds_new;
-	}while(nds_new !=NULL);
+		cout<<endl;
+	}//while(nds_new !=NULL);
 }
 
 Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
@@ -1295,25 +1303,32 @@ Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
 		if(nd->name == na->name)
 			nbr = nb;
 		else	nbr = na;
+		if(nbr->visit_flag == true) continue;
 		if(nbr->region_flag == false) continue;
-		if(!nbr->is_ground()&& !nbr->visit_flag){
+		if(!nbr->is_ground()&& !nbr->visit_flag)
+{
 			// assign initial weight
-			double distance = nd->distance + 1.0/net->value;
+			double distance = nd->distance + net->value;
 			if(nbr->distance == -1 || 
-			   distance < nbr->distance)
+			   distance < nbr->distance){
+				//cout<<"nbr, distance, calc: "<<*nbr<<" "<<nbr->distance<<" "<<distance<<endl;
 				nbr->distance = distance;
+			}
 
 			// if node is not traversed yet	
-			if(!nbr->traverse_flag)
+			if(!nbr->traverse_flag){
 				front_nodes.push_back(nbr);
+			}
 		}
 		nbr->traverse_flag = true;
 	}
 	// select the least distance node from 
 	// front_nodes
 	Node *nds_new = min_dist_front_node(front_nodes);
-	if(nds_new !=NULL)
-		nds_new->visit_flag = true;			
+	if(nds_new !=NULL){
+		cout<<"new min dist node: "<<*nds_new<<endl;
+		nds_new->visit_flag = true;
+	}
 	return nds_new;
 }
 
@@ -1324,7 +1339,9 @@ Node* Circuit::min_dist_front_node(vector<Node*> front_nodes){
 	double min_dist = -1.0;
 	for(size_t i=0;i<front_nodes.size();i++){
 		nd = front_nodes[i];
-		if(nd->visit_flag == true) continue;			 if(i==0){
+		if(nd->visit_flag == true) continue;
+		cout<<"front_node: "<<*nd<<" "<<nd->distance<<endl;
+		if(min_dist == -1.0){
 			min_dist = nd->distance;
 			min_dist_nd = nd;
 		}			
@@ -1336,4 +1353,13 @@ Node* Circuit::min_dist_front_node(vector<Node*> front_nodes){
 		}
 	}
 	return min_dist_nd;
+}
+
+void Circuit::print_distance(){
+	//for(size_t i=0;i<special_nodes.size();i++){
+		for(size_t j=0;j<nodelist.size()-1;j++){
+			if(nodelist[j]->region_flag==true)
+				cout<<"nd, dist: "<<nodelist[j]->name<<" "<<nodelist[j]->distance<<endl;
+		}	
+	//}
 }

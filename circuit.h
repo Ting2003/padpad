@@ -105,6 +105,7 @@ public:
 		vector<Node *> &front_nodes);
 	Node* min_dist_front_node(vector<Node*> 
 		front_nodes);
+	void print_distance();
 	//////// end functions for pad ////////
 
 	// C style output
