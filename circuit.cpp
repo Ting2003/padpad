@@ -1278,17 +1278,12 @@ void Circuit::find_shortest_paths(Node *nds){
 	nds_old->traverse_flag = true;
 	// stores all front end nodes
 	vector<Node*> front_nodes;
-	for(size_t i=0;i<11;i++){
-	//do{
+	do{
 		nds_new = update_distance(nds_old, 
-			front_nodes);
-
-		if(nds_new == NULL){
-			break;
-		}
+			front_nodes);	
 		nds_old = nds_new;
-		cout<<endl;
-	}//while(nds_new !=NULL);
+		//cout<<endl;
+	}while(nds_new !=NULL);
 }
 
 Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
