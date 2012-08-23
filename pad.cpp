@@ -5,5 +5,5 @@
 using namespace std;
 
 Pad::Pad(): node(NULL){
-	controlling_nodes.clear();
+	control_nodes.clear();
 }

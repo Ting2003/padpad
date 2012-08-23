@@ -18,6 +18,6 @@ public:
 	
 	Node * node;
 	// record the controlled nodes and weighting
-	map<Node*, double> controlling_nodes;
+	map<Node*, double> control_nodes;
 };
 #endif
