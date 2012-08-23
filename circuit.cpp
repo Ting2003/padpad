@@ -1212,6 +1212,7 @@ void Circuit::expand_region(){
 	Node *nd;
 	for(size_t i=0;i<special_nodes.size();i++){
 		nd = special_nodes[i];
+		cout<<"special node: "<<*nd<<endl;
 		// mark nodes with region flag
 		expand_region_of_a_node(nd);
 
@@ -1225,12 +1226,13 @@ void Circuit::expand_region(){
 // expand the region for each node, covering 10 pads
 void Circuit::expand_region_of_a_node(Node *nds){
 	// stop when reaching pad_number
-	int pad_number = 10; 	
+	int pad_number = 5; 	
 	int count = 0;
 	queue<Node*> q;
 	q.push(nds);
 	nds->region_flag = true;
-	while(count <= pad_number || !q.empty()){
+	cout<<"nds: "<<*nds<<endl;
+	while(count < pad_number || !q.empty()){
 		Node * nd = q.front();
 		// add neighboring nodes into queue
 		update_queue(q, nd, count, pad_number);
@@ -1252,10 +1254,13 @@ void Circuit::update_queue(queue<Node*> &q, Node *nd, int &count, int pad_number
 			nbr = nb;
 		else	nbr = na;
 		if(!nbr->is_ground()&& !nbr->region_flag){
+			//cout<<"nbr: "<<*nbr<<endl;
 			q.push(nbr);
 			nbr->region_flag = true;
-			if(nbr->isX()== true)
+			if(nbr->isX()== true){
 				count ++;
+				cout<<"add a new pad: "<<*nbr<<" "<<count<<endl;
+			}
 		}
 	}
 }

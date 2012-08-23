@@ -105,8 +105,9 @@ int main(int argc, char * argv[]){
 			double special_IRdrop = ckt->locate_special_maxIRdrop();
 			clog<<"max IRdrop is: "<<max_IRdrop<<endl;
 			clog<<"special IRdrop is: "<<special_IRdrop<<endl;
+			ckt->expand_region();
 			//ckt->build_pad_set();
-			cktlist[i]->print();
+			//cktlist[i]->print();
 			clog<<endl;
 			// after that, this circuit can be released
 			delete ckt;
@@ -115,7 +116,7 @@ int main(int argc, char * argv[]){
 	t2 = clock();
 	//clog<<"solve using: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 	// output a single ground node
-	printf("G  %.5e\n", 0.0);
+	//printf("G  %.5e\n", 0.0);
 
 	close_logfile();
 	
