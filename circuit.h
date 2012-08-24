@@ -96,6 +96,9 @@ public:
 	double max_IRdrop;
 	vector<Pad*> pad_set;
 	vector<Node*> special_nodes;
+	// mapping from name to Node object pointer
+	unordered_map<Point*, Node*> map_node_pt;
+
 	////// new functions for pad /////
 	void expand_region();
 	void expand_region_of_a_node(Node *nd_s);
@@ -109,6 +112,12 @@ public:
 	void print_distance(Node *nd);
 	void print_pad_map();
 	void clear_flags();
+	void update_pad_pos();
+	void round_data(double &data);
+	void pad_projection(Node *pad, double x, double y);
+	bool has_node(Point *pt) const;
+	Node * get_node(Point *pt);
+	void build_map_node_pt();
 	//////// end functions for pad ////////
 
 	// C style output
@@ -258,6 +267,19 @@ inline bool Circuit::has_node(string name) const{
 inline Node * Circuit::get_node(string name){
 	unordered_map<string, Node*>::const_iterator it = map_node.find(name);
 	if( it != map_node.end() ) return it->second;
+	else return NULL;
+}
+
+// fina a node by pt
+inline bool Circuit::has_node(Point* pt) const{
+	if( map_node_pt.find(pt) != map_node_pt.end() ) return true;
+	return false;
+}
+
+// get a node by pt
+inline Node * Circuit::get_node(Point* pt){
+	unordered_map<Point*, Node*>::const_iterator it = map_node_pt.find(pt);
+	if( it != map_node_pt.end() ) return it->second;
 	else return NULL;
 }
 

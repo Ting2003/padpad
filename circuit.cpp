@@ -64,6 +64,9 @@ Circuit::Circuit(string _name):
 
 // Trick: do not release memory to increase runtime
 Circuit::~Circuit(){
+	pad_set.clear();
+	special_nodes.clear();
+	map_node_pt.clear();
 	for(size_t i=0;i<nodelist.size();i++) delete nodelist[i];
 	for(int type=0;type<NUM_NET_TYPE;type++){
 		NetList & ns = net_set[type];
@@ -1409,5 +1412,101 @@ void Circuit::clear_flags(){
 		nd->traverse_flag = false;
 		nd->visit_flag = false;
 		nd->distance = -1;	
+	}
+}
+
+// decide pad's new pos with the weights
+// need to be tuned
+void Circuit::update_pad_pos(){
+	Node *pad;
+	Pad *pad_ptr;
+	Node *nd;
+	double sum_weight = 0;
+	double weighted_x =0;
+	double weighted_y =0;
+	double dist = 0;
+	double pad_newx;
+	double pad_newy;
+	map<Node *, double>::iterator it;
+
+	// build up the map for nodes in PAD layer
+	build_map_node_pt();
+
+	for(size_t i=0;i<pad_set.size();i++){
+		pad_ptr = pad_set[i];
+		pad = pad_ptr->node;
+		for(it = pad_ptr->control_nodes.begin();
+		    it != pad_ptr->control_nodes.end();
+		    it++){
+			nd = it->first;
+			dist = it->second;
+			weighted_x += dist * nd->pt.x;
+			weighted_y += dist * nd->pt.y;
+			sum_weight += dist; 	
+		}
+		pad_newx = weighted_x / sum_weight;
+		pad_newy = weighted_y / sum_weight;
+						
+		round_data(pad_newx);
+		round_data(pad_newy);
+	
+		// search for nearest node to (pad_newx,
+		// pad_newy)
+		pad_projection(pad, pad_newx, pad_newy);
+	}
+}
+
+// round double, depends on whether the frac >=0.5
+void Circuit::round_data(double &data){
+	double fractpart, intpart;
+	fractpart = modf(data, &intpart);
+	if(fractpart >= 0.5)
+		data = ceil(data);
+	else
+		data = floor(data);
+}
+
+// expand from (x,y) to nearest node in grid
+// fits for non-uniform grid
+void Circuit::pad_projection(Node *nd, double center_x, double center_y){
+	double dx[4] = {1, 0, -1, 0};
+	double dy[4] = {0, 1, 0, -1};
+	queue<string> q;
+	string name;
+	string name_cur;
+	string name_nbr;
+	string center_name;
+	
+	center_name = nd->name;
+	//center_name->pt.x = center_x;
+	//center_name->pt.y = center_y;
+	q.push(center_name);
+	// first judge if this node is on grid
+	
+	// if not, expand it to neighboring area
+	while(!q.empty()){
+		name_cur = q.front();
+		//expand_pad_pos(q, name_cur);	
+		for(size_t i=0;i<4;i++){
+			name_nbr = name_cur;
+		}
+	}
+}
+
+void Circuit::build_map_node_pt(){
+	if(pad_set.size()==0)
+		clog<<"no pad on grid. ERROR"<<endl;
+	// ref layer
+	int ref_layer = pad_set[0]->node->get_layer();
+
+	Node *nd;
+	pair<Point*, Node*> pt_pair;
+	for(size_t i=0;i<nodelist.size()-1;i++){
+		nd = nodelist[i];
+		if(nd->get_layer()!=ref_layer)
+			continue;
+		pt_pair.first = &nd->pt;
+		pt_pair.second = nd;
+		map_node_pt.insert(pt_pair);
 	}
 }
