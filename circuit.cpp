@@ -1231,12 +1231,13 @@ void Circuit::expand_region(){
 // expand the region for each node, covering 10 pads
 void Circuit::expand_region_of_a_node(Node *nds){
 	// stop when reaching pad_number
-	int pad_number = 1; 	
+	int pad_number = pad_set.size();//2; 	
 	int count = 0;
 	queue<Node*> q;
 	q.push(nds);
 	nds->region_flag = true;
-
+	if(nds->isX())
+		count ++;
 	//cout<<"nds: "<<*nds<<endl;
 	while(count < pad_number || !q.empty()){
 		Node * nd = q.front();
