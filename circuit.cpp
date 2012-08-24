@@ -1219,7 +1219,7 @@ void Circuit::expand_region(){
 		// find the weighted shortest_path for 
 		// all nodes in the region of this node
 		find_shortest_paths(nd);
-		//print_distance();
+		print_distance(nd);
 		map_min_dist_to_pad(nd);
 		// clear region, traversal, visit flag
 		clear_flags();
@@ -1313,7 +1313,8 @@ Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
 		if(!nbr->is_ground()&& !nbr->visit_flag)
 {
 			// assign initial weight
-			double distance = nd->distance + net->value;
+			double distance = nd->distance 
+				+ 1.0/net->value;
 			if(nbr->distance == -1 || 
 			   distance < nbr->distance){
 				//cout<<"nbr, distance, calc: "<<*nbr<<" "<<nbr->distance<<" "<<distance<<endl;
@@ -1360,8 +1361,8 @@ Node* Circuit::min_dist_front_node(vector<Node*> front_nodes){
 	return min_dist_nd;
 }
 
-void Circuit::print_distance(){
-	cout<<endl;
+void Circuit::print_distance(Node *nd){
+	cout<<endl<<"special node: "<<*nd<<endl;
 	for(size_t j=0;j<nodelist.size()-1;j++){
 		if(nodelist[j]->region_flag==true)
 			cout<<"nd, dist: "<<nodelist[j]->name<<" "<<nodelist[j]->distance<<endl;
@@ -1373,14 +1374,15 @@ void Circuit::map_min_dist_to_pad(Node *nds){
 	Pad *nd;
 	Node *ndt;
 	pair<Node*, double> pad_pair;
+	cout<<"nds: "<<*nds<<endl;
 	for(size_t i=0;i<pad_set.size();i++){
 		nd = pad_set[i];
 		ndt = nd->node;
-		if(ndt->region_flag ==true){
-			pad_pair.first = nds;
-			pad_pair.second = ndt->distance;
-			nd->control_nodes.insert(pad_pair);
-		}	
+		if(!ndt->region_flag) continue;
+		cout<<"pad belongs to region: "<<*ndt<<endl;
+		pad_pair.first = nds;
+		pad_pair.second = ndt->distance;
+		nd->control_nodes.insert(pad_pair);
 	}	
 }
 
