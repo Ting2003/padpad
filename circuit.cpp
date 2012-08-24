@@ -1219,7 +1219,7 @@ void Circuit::expand_region(){
 		// find the weighted shortest_path for 
 		// all nodes in the region of this node
 		find_shortest_paths(nd);
-		print_distance(nd);
+		//print_distance(nd);
 		map_min_dist_to_pad(nd);
 		// clear region, traversal, visit flag
 		clear_flags();
@@ -1374,12 +1374,12 @@ void Circuit::map_min_dist_to_pad(Node *nds){
 	Pad *nd;
 	Node *ndt;
 	pair<Node*, double> pad_pair;
-	cout<<"nds: "<<*nds<<endl;
+	//cout<<"nds: "<<*nds<<endl;
 	for(size_t i=0;i<pad_set.size();i++){
 		nd = pad_set[i];
 		ndt = nd->node;
 		if(!ndt->region_flag) continue;
-		cout<<"pad belongs to region: "<<*ndt<<endl;
+		//cout<<"pad belongs to region: "<<*ndt<<endl;
 		pad_pair.first = nds;
 		pad_pair.second = ndt->distance;
 		nd->control_nodes.insert(pad_pair);
