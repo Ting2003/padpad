@@ -1437,10 +1437,12 @@ void Circuit::update_pad_pos(){
 
 	// build up the map for nodes in PAD layer
 	build_map_node_pt();
+	cout<<"finish build map node pt. "<<endl;
 
 	for(size_t i=0;i<pad_set.size();i++){
 		pad_ptr = pad_set[i];
 		pad = pad_ptr->node;
+		cout<<"pad_node: "<<*pad<<endl;
 		for(it = pad_ptr->control_nodes.begin();
 		    it != pad_ptr->control_nodes.end();
 		    it++){
@@ -1455,6 +1457,8 @@ void Circuit::update_pad_pos(){
 						
 		round_data(pad_newx);
 		round_data(pad_newy);
+		cout<<"newx, newy: "<<pad_newx<<" "<<
+			pad_newy<<endl;
 
 		// search for nearest node to (pad_newx,
 		// pad_newy)
@@ -1546,7 +1550,6 @@ Node * Circuit::pad_projection(Node *nd, double center_x, double center_y){
 void Circuit::build_map_node_pt(){
 	if(pad_set.size()==0)
 		clog<<"no pad on grid. ERROR"<<endl;
-	stringstream sstream;
 	// ref layer
 	int ref_layer = pad_set[0]->node->get_layer();
 
@@ -1556,9 +1559,11 @@ void Circuit::build_map_node_pt(){
 		nd = nodelist[i];
 		if(nd->get_layer()!=ref_layer)
 			continue;
+		stringstream sstream;
 		sstream<<ref_layer<<"_"<<nd->pt.x<<
 			"_"<<nd->pt.y;
 		pt_pair.first = sstream.str();
+		//cout<<"string: "<<pt_pair.first<<endl;
 		pt_pair.second = nd;
 		map_node_pt.insert(pt_pair);
 	}
