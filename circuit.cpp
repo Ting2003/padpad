@@ -1419,6 +1419,7 @@ void Circuit::clear_flags(){
 // need to be tuned
 void Circuit::update_pad_pos(){
 	Node *pad;
+	Node *new_pad;
 	Pad *pad_ptr;
 	Node *nd;
 	double sum_weight = 0;
@@ -1449,10 +1450,13 @@ void Circuit::update_pad_pos(){
 						
 		round_data(pad_newx);
 		round_data(pad_newy);
-	
+
 		// search for nearest node to (pad_newx,
 		// pad_newy)
-		pad_projection(pad, pad_newx, pad_newy);
+		new_pad = pad_projection(pad, pad_newx, pad_newy);
+		// update pad information
+		pad_ptr->node = new_pad;
+		pad_ptr->control_nodes.clear();	
 	}
 }
 
@@ -1468,44 +1472,88 @@ void Circuit::round_data(double &data){
 
 // expand from (x,y) to nearest node in grid
 // fits for non-uniform grid
-void Circuit::pad_projection(Node *nd, double center_x, double center_y){
+Node * Circuit::pad_projection(Node *nd, double center_x, double center_y){
+	queue<Point> q;
+	Point pt;
+	Point pt_cur;
+	stringstream sstream;
+	string pt_name;
+	Node *nd_new;
+	bool flag = false;		
 	double dx[4] = {1, 0, -1, 0};
 	double dy[4] = {0, 1, 0, -1};
-	queue<string> q;
-	string name;
-	string name_cur;
-	string name_nbr;
-	string center_name;
-	
-	center_name = nd->name;
-	//center_name->pt.x = center_x;
-	//center_name->pt.y = center_y;
-	q.push(center_name);
-	// first judge if this node is on grid
-	
-	// if not, expand it to neighboring area
-	while(!q.empty()){
-		name_cur = q.front();
-		//expand_pad_pos(q, name_cur);	
-		for(size_t i=0;i<4;i++){
-			name_nbr = name_cur;
+
+	pt.z = nd->get_layer();
+	pt.x = center_x;
+	pt.y = center_y;
+
+	sstream<<pt.z<<"_"<<pt.x<<"_"<<pt.y; 
+	pt_name = sstream.str();
+	// first see if this node is on grid
+	// and if it is occupied by pad or not
+	if(has_node_pt(pt_name)){
+		nd_new = get_node_pt(pt_name);
+		// if this node is not occupied by pad
+		if(!nd_new->isX()){
+			nd->disableX();
+			nd_new->enableX();
+			return nd_new;
 		}
 	}
+
+	bool return_flag = false;
+	// else start to search for node
+	q.push(pt);
+	// if not, expand it to neighboring area
+	while(!q.empty()&& return_flag == false){
+		pt_cur = q.front();
+		Point pt_nbr = pt_cur;
+		//expand_pad_pos(q, pt_cur);	
+		for(size_t i=0;i<4;i++){
+			pt_nbr.x = pt_cur.x + dx[i];
+			pt_nbr.y = pt_cur.y + dy[i];
+			stringstream sstream;
+			string pt_name;
+			sstream << pt_nbr.z<<"_"<<
+				pt_nbr.x<<"_"<<
+				pt_nbr.y;
+			pt_name = sstream.str();
+			if(has_node_pt(pt_name)){
+				nd_new = get_node_pt(pt_name);
+				if(!nd_new->isX()){
+					nd->disableX();
+					nd_new->enableX();
+					return_flag = true;
+					break;
+				}
+			}
+			q.push(pt_nbr);
+		}
+		q.pop();
+	}
+	while(!q.empty()){
+		q.pop();
+	}
+	if(return_flag == true)
+		return nd_new;
 }
 
 void Circuit::build_map_node_pt(){
 	if(pad_set.size()==0)
 		clog<<"no pad on grid. ERROR"<<endl;
+	stringstream sstream;
 	// ref layer
 	int ref_layer = pad_set[0]->node->get_layer();
 
 	Node *nd;
-	pair<Point*, Node*> pt_pair;
+	pair<string, Node*> pt_pair;
 	for(size_t i=0;i<nodelist.size()-1;i++){
 		nd = nodelist[i];
 		if(nd->get_layer()!=ref_layer)
 			continue;
-		pt_pair.first = &nd->pt;
+		sstream<<ref_layer<<"_"<<nd->pt.x<<
+			"_"<<nd->pt.y;
+		pt_pair.first = sstream.str();
 		pt_pair.second = nd;
 		map_node_pt.insert(pt_pair);
 	}

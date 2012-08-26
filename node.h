@@ -66,7 +66,11 @@ public:
 	double distance;
 	
 	bool isVisited() const;
-	bool inRegion() const;	
+	bool inRegion() const;
+	// disable the flag of some pad node
+	void disableX();
+	// enable the flag of some pad node
+	void enableX();	
 	//////// end function for pad ////
 private:
 	double value;		// voltage
@@ -80,6 +84,8 @@ private:
 };      	
 
 inline bool Node::isX() const{return flag;}
+inline void Node::disableX() {flag = false;}
+inline void Node::enableX() {flag = true;}
 
 //inline bool Node::is_ground() const{return name == "0";}
 // use a tricky way to speed up

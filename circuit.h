@@ -16,6 +16,7 @@
 #define __CIRCUIT_H__
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include <tr1/unordered_map>
 #include <map>
@@ -97,7 +98,7 @@ public:
 	vector<Pad*> pad_set;
 	vector<Node*> special_nodes;
 	// mapping from name to Node object pointer
-	unordered_map<Point*, Node*> map_node_pt;
+	unordered_map<string, Node*> map_node_pt;
 
 	////// new functions for pad /////
 	void expand_region();
@@ -114,9 +115,9 @@ public:
 	void clear_flags();
 	void update_pad_pos();
 	void round_data(double &data);
-	void pad_projection(Node *pad, double x, double y);
-	bool has_node(Point *pt) const;
-	Node * get_node(Point *pt);
+	Node * pad_projection(Node *pad, double x, double y);
+	bool has_node_pt(string pt_name) const;
+	Node * get_node_pt(string pt_name);
 	void build_map_node_pt();
 	//////// end functions for pad ////////
 
@@ -271,14 +272,14 @@ inline Node * Circuit::get_node(string name){
 }
 
 // fina a node by pt
-inline bool Circuit::has_node(Point* pt) const{
-	if( map_node_pt.find(pt) != map_node_pt.end() ) return true;
+inline bool Circuit::has_node_pt(string pt_name) const{
+	if( map_node_pt.find(pt_name) != map_node_pt.end() ) return true;
 	return false;
 }
 
 // get a node by pt
-inline Node * Circuit::get_node(Point* pt){
-	unordered_map<Point*, Node*>::const_iterator it = map_node_pt.find(pt);
+inline Node * Circuit::get_node_pt(string pt_name){
+	unordered_map<string, Node*>::const_iterator it = map_node_pt.find(pt_name);
 	if( it != map_node_pt.end() ) return it->second;
 	else return NULL;
 }
