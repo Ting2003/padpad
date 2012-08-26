@@ -119,6 +119,7 @@ public:
 	bool has_node_pt(string pt_name) const;
 	Node * get_node_pt(string pt_name);
 	void build_map_node_pt();
+	void relocate_pads();
 	//////// end functions for pad ////////
 
 	// C style output

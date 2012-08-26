@@ -1415,6 +1415,11 @@ void Circuit::clear_flags(){
 	}
 }
 
+void Circuit::relocate_pads(){
+	expand_region();
+	update_pad_pos();
+}
+
 // decide pad's new pos with the weights
 // need to be tuned
 void Circuit::update_pad_pos(){

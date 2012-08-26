@@ -105,7 +105,7 @@ int main(int argc, char * argv[]){
 			double special_IRdrop = ckt->locate_special_maxIRdrop();
 			clog<<"max IRdrop is: "<<max_IRdrop<<endl;
 			clog<<"special IRdrop is: "<<special_IRdrop<<endl;
-			ckt->expand_region();
+			ckt->relocate_pads();
 			//ckt->build_pad_set();
 			//cktlist[i]->print();
 			clog<<endl;
