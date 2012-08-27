@@ -1425,34 +1425,36 @@ void Circuit::relocate_pads(){
 	
 	expand_region();
 	dist = update_pad_pos();
+	project_pads();
 	expand_region();
 	new_dist = update_pad_pos();
 	// restore pads into old positions
 	if(new_dist > dist){
 		restore_pad_set(pad_set_old);
 		return;
-	}else // else store new pad set
+	}else{ // else store new pad set
 		assign_pad_set(pad_set_old);
+		clog<<"after assigning pad set."<<endl;
+		project_pads();
+	}
 
 	while(new_dist < dist){
 		dist = new_dist;
 		expand_region();
 		new_dist = update_pad_pos();
 		if(new_dist > dist){
-			clog<<"start to restore pad set."<<endl;
-			for(size_t i=0;i<pad_set_old.size();i++){
-				clog<<"pad_set_old: "<<i<<" "<<*pad_set_old[i]<<endl;
-			}
 			restore_pad_set(pad_set_old);
-			for(size_t i=0;i<pad_set_old.size();i++){
-				clog<<"pad_set_restore: "<<i<<" "<<*pad_set_old[i]<<endl;
-			}
-			
 		}
-		else
+		else{
 			assign_pad_set(pad_set_old); 
+			project_pads();
+		}
 	}
 	pad_set_old.clear();
+	clog<<endl<<endl;
+	for(size_t i=0;i<pad_set.size();i++){
+		clog<<"Final pad_set: "<<i<<" "<<*pad_set[i]->node<<endl;
+	}
 }
 
 // decide pad's new pos with the weights
@@ -1497,8 +1499,8 @@ double Circuit::update_pad_pos(){
  
 		double temp = sqrt(weighted_x*weighted_x 			 + weighted_y*weighted_y);
 		total_dist += temp;
-		clog<<"pad, dist: "<<*pad<<" "<<
-			temp<<endl;
+		//clog<<"pad, dist: "<<*pad<<" "<<
+			//temp<<endl;
 	}
 
 	clog<<"total_dist: "<<total_dist<<endl;
@@ -1516,7 +1518,7 @@ void Circuit::project_pads(){
 		// search for nearest node to (pad_newx,
 		// pad_newy)
 		new_pad = pad_projection(pad_ptr);
-		clog<<"new_pad: "<<*new_pad<<endl<<endl;
+		clog<<"new_pad: "<<*new_pad<<endl;
 		// update pad information
 		pad_ptr->node = new_pad;
 		pad_ptr->control_nodes.clear();	
@@ -1637,6 +1639,8 @@ void Circuit::restore_pad_set(vector<Node*>&pad_set_old){
 				pad_set_old[i]){
 			nd_old = pad_set_old[i];
 			nd_new = pad_set[i]->node;
+			//clog<<"nd_old / nd_new: "<<
+			//*nd_old<<" "<<*nd_new<<endl;
 			nd_new->disableX();
 			nd_new->value = 0;
 			nd_old->enableX();
@@ -1647,9 +1651,9 @@ void Circuit::restore_pad_set(vector<Node*>&pad_set_old){
 }
 
 void Circuit::assign_pad_set(vector<Node*>&pad_set_old){
-	clog<<endl<<"assign pad set."<<endl;
+	clog<<"assign pad set."<<endl;
 	for(size_t i=0;i<pad_set_old.size();i++){
 		pad_set_old[i] = pad_set[i]->node;
-		clog<<"new pad: "<<i<<" "<<*pad_set_old[i]<<endl;	
+		clog<<"pad: "<<i<<" "<<*pad_set_old[i]<<endl;	
 	}
 }
