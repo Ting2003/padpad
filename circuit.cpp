@@ -1228,7 +1228,7 @@ void Circuit::expand_region(){
 		clear_flags();
 	}
 
-	print_pad_map();
+	//print_pad_map();
 }
 
 // expand the region for each node, covering 10 pads
@@ -1416,13 +1416,27 @@ void Circuit::clear_flags(){
 }
 
 void Circuit::relocate_pads(){
+	double dist = 0;
+	double new_dist = 0;
+	//for(size_t i=0;i<5;i++){
 	expand_region();
-	update_pad_pos();
+	dist = update_pad_pos();
+	expand_region();
+	new_dist = update_pad_pos();
+	// remember to move pad update info to here
+	if(new_dist > dist) return;
+	while(new_dist < dist){
+		dist = new_dist;
+		expand_region();
+		new_dist = update_pad_pos(); 
+	}
+	//}
 }
 
 // decide pad's new pos with the weights
 // need to be tuned
-void Circuit::update_pad_pos(){
+double Circuit::update_pad_pos(){
+	double total_dist=0;
 	Node *pad;
 	Node *new_pad;
 	Pad *pad_ptr;
@@ -1437,12 +1451,12 @@ void Circuit::update_pad_pos(){
 
 	// build up the map for nodes in PAD layer
 	build_map_node_pt();
-	cout<<"finish build map node pt. "<<endl;
+	//cout<<endl<<"finish build map node pt. "<<endl;
 
 	for(size_t i=0;i<pad_set.size();i++){
 		pad_ptr = pad_set[i];
 		pad = pad_ptr->node;
-		cout<<"pad_node: "<<*pad<<endl;
+		//cout<<"pad_node: "<<*pad<<endl;
 		for(it = pad_ptr->control_nodes.begin();
 		    it != pad_ptr->control_nodes.end();
 		    it++){
@@ -1457,16 +1471,26 @@ void Circuit::update_pad_pos(){
 						
 		round_data(pad_newx);
 		round_data(pad_newy);
-		cout<<"newx, newy: "<<pad_newx<<" "<<
-			pad_newy<<endl;
+
+		double temp = sqrt(weighted_x*weighted_x + 
+				weighted_y*weighted_y);
+		total_dist += temp;
+		clog<<"pad, dist: "<<*pad<<" "<<
+			temp<<endl;
+		//cout<<"newx, newy: "<<pad_newx<<" "<<
+			//pad_newy<<endl;
 
 		// search for nearest node to (pad_newx,
 		// pad_newy)
 		new_pad = pad_projection(pad, pad_newx, pad_newy);
+		cout<<"new_pad: "<<*new_pad<<endl<<endl;
 		// update pad information
 		pad_ptr->node = new_pad;
 		pad_ptr->control_nodes.clear();	
 	}
+	map_node_pt.clear();
+	clog<<"total_dist: "<<total_dist<<endl;
+	return total_dist;
 }
 
 // round double, depends on whether the frac >=0.5
@@ -1506,6 +1530,7 @@ Node * Circuit::pad_projection(Node *nd, double center_x, double center_y){
 		if(!nd_new->isX()){
 			nd->disableX();
 			nd_new->enableX();
+			nd_new->value = VDD;
 			return nd_new;
 		}
 	}
@@ -1532,6 +1557,7 @@ Node * Circuit::pad_projection(Node *nd, double center_x, double center_y){
 				if(!nd_new->isX()){
 					nd->disableX();
 					nd_new->enableX();
+					nd_new->value = VDD;
 					return_flag = true;
 					break;
 				}

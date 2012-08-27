@@ -113,7 +113,7 @@ public:
 	void print_distance(Node *nd);
 	void print_pad_map();
 	void clear_flags();
-	void update_pad_pos();
+	double update_pad_pos();
 	void round_data(double &data);
 	Node * pad_projection(Node *pad, double x, double y);
 	bool has_node_pt(string pt_name) const;
