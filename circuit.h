@@ -125,6 +125,7 @@ public:
 	void restore_pad_set(vector<Node*>&pad_set_old);
 	void assign_pad_set(vector<Node*>&pad_set_old);
 	void rebuild_voltage_nets();
+	void print_pad_set();
 	//////// end functions for pad ////////
 
 	// C style output

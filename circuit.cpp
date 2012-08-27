@@ -1426,9 +1426,12 @@ void Circuit::relocate_pads(){
 	origin_pad_set.resize(pad_set.size());
 	assign_pad_set(origin_pad_set);
 	
+	print_pad_set();
 	expand_region();
 	dist = update_pad_pos();
 	project_pads();
+
+	print_pad_set();
 	expand_region();
 	new_dist = update_pad_pos();
 	// restore pads into old positions
@@ -1437,12 +1440,14 @@ void Circuit::relocate_pads(){
 		return;
 	}else{ // else store new pad set
 		assign_pad_set(pad_set_old);
-		clog<<"after assigning pad set."<<endl;
+		//clog<<"after assigning pad set."<<endl;
 		project_pads();
 	}
 
 	while(new_dist < dist){
 		dist = new_dist;
+
+		print_pad_set();
 		expand_region();
 		new_dist = update_pad_pos();
 		if(new_dist > dist){
@@ -1459,10 +1464,8 @@ void Circuit::relocate_pads(){
 		clog<<"Final pad_set: "<<i<<" "<<*pad_set[i]->node<<endl;
 	}
 
-	clog<<"before rebuild voltage nets."<<endl;
 	rebuild_voltage_nets();
 	solve_LU_core();
-	clog<<"after solve LU core. "<<endl;
 	
 	double max_IR = locate_maxIRdrop();	
 	double max_IRS = locate_special_maxIRdrop();
@@ -1486,7 +1489,6 @@ double Circuit::update_pad_pos(){
 	map<Node *, double>::iterator it;
 	// build up the map for nodes in PAD layer
 	build_map_node_pt();
-	//cout<<endl<<"finish build map node pt. "<<endl;
 
 	for(size_t i=0;i<pad_set.size();i++){
 		pad_ptr = pad_set[i];
@@ -1516,7 +1518,7 @@ double Circuit::update_pad_pos(){
 			//temp<<endl;
 	}
 
-	clog<<"total_dist: "<<total_dist<<endl;
+	clog<<"total_dist: "<<total_dist<<endl<<endl;
 	return total_dist;
 }
 
@@ -1531,7 +1533,7 @@ void Circuit::project_pads(){
 		// search for nearest node to (pad_newx,
 		// pad_newy)
 		new_pad = pad_projection(pad_ptr);
-		clog<<"new_pad: "<<*new_pad<<endl;
+		//clog<<"new_pad: "<<*new_pad<<endl;
 		// update pad information
 		pad_ptr->node = new_pad;
 		pad_ptr->control_nodes.clear();	
@@ -1666,10 +1668,10 @@ void Circuit::restore_pad_set(vector<Node*>&pad_set_old){
 }
 
 void Circuit::assign_pad_set(vector<Node*>&pad_set_old){
-	clog<<"assign pad set."<<endl;
+	//clog<<"assign pad set."<<endl;
 	for(size_t i=0;i<pad_set_old.size();i++){
 		pad_set_old[i] = pad_set[i]->node;
-		clog<<"pad: "<<i<<" "<<*pad_set_old[i]<<endl;	
+		//clog<<"pad: "<<i<<" "<<*pad_set_old[i]<<endl;	
 	}
 }
 
@@ -1717,4 +1719,10 @@ void Circuit::rebuild_voltage_nets(){
 		clog<<*nodelist[i]<<" "<<nodelist[i]->isX()<<endl;
 	}*/
 
+}
+
+void Circuit::print_pad_set(){
+	for(size_t i=0;i<pad_set.size();i++){
+		clog<<"pad: "<<*pad_set[i]->node<<endl;
+	}		
 }
