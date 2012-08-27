@@ -103,7 +103,7 @@ public:
 	////// new functions for pad /////
 	void expand_region();
 	void expand_region_of_a_node(Node *nd_s);
-	void update_queue(queue<Node*> &q, Node *nd, int &count, int pad_number);
+	void update_queue(queue<Node*> &q, Node *nd, int &count);
 	void find_shortest_paths(Node *nds);
 	void map_min_dist_to_pad(Node *nds);
 	Node* update_distance(Node *nd, 
@@ -115,11 +115,14 @@ public:
 	void clear_flags();
 	double update_pad_pos();
 	void round_data(double &data);
-	Node * pad_projection(Node *pad, double x, double y);
+	Node * pad_projection(Pad *pad);
+	void project_pads();
 	bool has_node_pt(string pt_name) const;
 	Node * get_node_pt(string pt_name);
 	void build_map_node_pt();
 	void relocate_pads();
+	void restore_pad_set(vector<Node*>&pad_set_old);
+	void assign_pad_set(vector<Node*>&pad_set_old);
 	//////// end functions for pad ////////
 
 	// C style output

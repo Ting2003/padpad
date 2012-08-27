@@ -15,9 +15,12 @@ using namespace std;
 class Pad{
 public:
 	Pad();
+	~Pad();
 	
 	Node * node;
 	// record the controlled nodes and weighting
 	map<Node*, double> control_nodes;
+	double newx;
+	double newy;
 };
 #endif
