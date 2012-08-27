@@ -96,6 +96,7 @@ public:
 	
 	double max_IRdrop;
 	vector<Pad*> pad_set;
+	vector<Node*> origin_pad_set;
 	vector<Node*> special_nodes;
 	// mapping from name to Node object pointer
 	unordered_map<string, Node*> map_node_pt;
@@ -123,6 +124,7 @@ public:
 	void relocate_pads();
 	void restore_pad_set(vector<Node*>&pad_set_old);
 	void assign_pad_set(vector<Node*>&pad_set_old);
+	void rebuild_voltage_nets();
 	//////// end functions for pad ////////
 
 	// C style output

@@ -1422,6 +1422,9 @@ void Circuit::relocate_pads(){
 	//for(size_t i=0;i<5;i++){
 	pad_set_old.resize(pad_set.size());
 	assign_pad_set(pad_set_old);
+	// store a original copy of the pad set
+	origin_pad_set.resize(pad_set.size());
+	assign_pad_set(origin_pad_set);
 	
 	expand_region();
 	dist = update_pad_pos();
@@ -1455,6 +1458,16 @@ void Circuit::relocate_pads(){
 	for(size_t i=0;i<pad_set.size();i++){
 		clog<<"Final pad_set: "<<i<<" "<<*pad_set[i]->node<<endl;
 	}
+
+	clog<<"before rebuild voltage nets."<<endl;
+	rebuild_voltage_nets();
+	solve_LU_core();
+	clog<<"after solve LU core. "<<endl;
+	
+	double max_IR = locate_maxIRdrop();	
+	double max_IRS = locate_special_maxIRdrop();
+	clog<<"max_IR is: "<<max_IR<<endl;
+	clog<<"max_IRS is: "<<max_IRS<<endl;
 }
 
 // decide pad's new pos with the weights
@@ -1563,6 +1576,7 @@ Node * Circuit::pad_projection(Pad *pad){
 		// if this node is not occupied by pad
 		if(!nd_new->isX()){
 			nd->disableX();
+			nd->value = 0;
 			nd_new->enableX();
 			nd_new->value = VDD;
 			return nd_new;
@@ -1635,6 +1649,7 @@ void Circuit::restore_pad_set(vector<Node*>&pad_set_old){
 	Node *nd_old=NULL;
 	Node *nd_new=NULL;
 	for(size_t i=0;i<pad_set_old.size();i++){
+		// have to use find
 		if(pad_set[i]->node !=
 				pad_set_old[i]){
 			nd_old = pad_set_old[i];
@@ -1656,4 +1671,50 @@ void Circuit::assign_pad_set(vector<Node*>&pad_set_old){
 		pad_set_old[i] = pad_set[i]->node;
 		clog<<"pad: "<<i<<" "<<*pad_set_old[i]<<endl;	
 	}
+}
+
+// modify voltage net set with rm_node and add_node
+void Circuit::rebuild_voltage_nets(){
+	int type = VOLTAGE;
+	size_t index_rm_net = 0;
+	Net *net=NULL;
+	Net *add_net=NULL;
+	Node *nd_ori=NULL;
+	Node *nd_new=NULL;
+	Node *rm_node=NULL;
+	Node *add_node=NULL;
+	vector<Net*> rm_net;
+	// delete all origin pad set
+	// and build nets of new pad set
+	for(size_t i=0;i<origin_pad_set.size();i++){
+		rm_node = origin_pad_set[i];
+		add_node = pad_set[i]->node;
+		//clog<<"nd_ori, nd_new: "<<*rm_node<<" "
+			//<<*add_node<<endl;
+
+		for(size_t i=0;i<net_set[type].size();i++){
+			net = net_set[type][i];
+			if(net->ab[0]->name == rm_node->name ||
+					net->ab[1]->name == rm_node->name){
+				index_rm_net = i;
+				rm_net.push_back(net);
+				break;
+			}
+		}
+		add_net = new Net(VOLTAGE, VDD, add_node, 
+				nodelist[nodelist.size()-1]);
+		net_set[type][index_rm_net] = add_net;
+	}
+	for(size_t i=0;i<rm_net.size();i++){
+		delete rm_net[i];
+	}
+	origin_pad_set.clear();
+	/*for(size_t i=0;i<net_set[type].size();i++){
+		net = net_set[type][i];
+		clog<<"final VDD net: "<<*net<<endl;
+	}
+	for(size_t i=0;i<nodelist.size()-1;i++){
+		clog<<*nodelist[i]<<" "<<nodelist[i]->isX()<<endl;
+	}*/
+
 }
