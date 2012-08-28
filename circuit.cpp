@@ -218,11 +218,24 @@ void Circuit::solve_init(){
 
 void Circuit::mark_special_nodes(){
 	special_nodes.clear();
-	for(size_t i=0;i<nodelist.size()-1;i++){
+	int type = CURRENT;
+	Net *net;
+	Node *nd;
+	// push back all current nodes
+	for(size_t i=0;i<net_set[type].size();i++){
+		net = net_set[type][i];
+		nd = net->ab[0];
+		if(nd->is_ground())
+			nd = net->ab[1];
+		if(i%8000==0)
+			special_nodes.push_back(nd);
+	}
+	clog<<"total special nodes: "<<special_nodes.size()<<endl;
+	/*for(size_t i=0;i<nodelist.size()-1;i++){
 		if(nodelist[i]->name == "n0_0_0" ||
 		   nodelist[i]->name =="n0_1_2")//"n0_150_100")
 			special_nodes.push_back(nodelist[i]);
-	}
+	}*/
 }
 
 // partition the circuit to X_BLOCKS * Y_BLOCKS blocks
@@ -1182,17 +1195,13 @@ double Circuit::locate_maxIRdrop(){
 double Circuit::locate_special_maxIRdrop(){
 	mark_special_nodes();
 	double max_IRdrop = 0;
-	for(size_t i=0;i<nodelist.size()-1;i++){
-		for(size_t j=0;j<special_nodes.size(); 
+	Node *nd;
+	for(size_t j=0;j<special_nodes.size(); 
 			j++){
-			if(nodelist[i]->name == special_nodes[j]->name){
-				double IR_drop = VDD - nodelist[i]->value;	
-				//clog<<endl<<"special node, value, IR: "<<nodelist[i]->name<<" "<<
-					//nodelist[i]->value<<" "<<IR_drop<<endl;	
-				if(IR_drop > max_IRdrop)
-					max_IRdrop = IR_drop;
-			}
-		}
+		nd = special_nodes[j];
+		double IR_drop = VDD - nd->value;	
+		if(IR_drop > max_IRdrop)
+			max_IRdrop = IR_drop;
 	}
 	return max_IRdrop;
 }
@@ -1218,14 +1227,31 @@ void Circuit::expand_region(){
 		nd = special_nodes[i];
 		//cout<<endl<<"special node: "<<*nd<<endl;
 		// mark nodes with region flag
+		clock_t t1, t2;
+		t1 = clock();
 		expand_region_of_a_node(nd);
+		t2 = clock();
+		//cout<<i<<" expand region. "<<
+			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 		// find the weighted shortest_path for 
 		// all nodes in the region of this node
+		t1 = clock();
 		find_shortest_paths(nd);
+		t2 = clock();
+		//cout<<i<<" find shortest path cost: "<<
+			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 		//print_distance(nd);
+		t1 = clock();
 		map_min_dist_to_pad(nd);
+		t2 = clock();
+		//cout<<i<<" map mpad cost: "<<
+			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 		// clear region, traversal, visit flag
+		t1 = clock();
 		clear_flags();
+		t2 = clock();
+		//cout<<i<<" clear flags cost: "<<
+			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 	}
 
 	//print_pad_map();
@@ -1234,7 +1260,7 @@ void Circuit::expand_region(){
 // expand the region for each node, covering 10 pads
 void Circuit::expand_region_of_a_node(Node *nds){
 	// stop when reaching pad_number
-	int pad_number = pad_set.size();//2; 	
+	int pad_number = 10;//pad_set.size();//2; 	
 	int count = 0;
 	queue<Node*> q;
 	q.push(nds);
@@ -1416,6 +1442,7 @@ void Circuit::clear_flags(){
 }
 
 void Circuit::relocate_pads(){
+	clog<<"start to relocate pads. "<<endl;
 	vector<Node*> pad_set_old;
 	double dist = 0;
 	double new_dist = 0;
@@ -1426,44 +1453,60 @@ void Circuit::relocate_pads(){
 	origin_pad_set.resize(pad_set.size());
 	assign_pad_set(origin_pad_set);
 	
-	print_pad_set();
+	//print_pad_set();
+	clog<<"pad set size: "<<pad_set.size()<<endl;
+	clog<<"before expand region."<<endl;
 	expand_region();
+	clog<<"finish first expand region. "<<endl;
 	dist = update_pad_pos();
+	clog<<"finish first update pad pos. "<<endl;
 	project_pads();
+	clog<<"finish first project pads. "<<endl;
 
 	//print_pad_set();
 	expand_region();
+	clog<<"before expand region."<<endl;
 	new_dist = update_pad_pos();
+	clog<<"finish first update pad pos. "<<endl;
 	// restore pads into old positions
-	if(new_dist > dist){
+	/*if(new_dist > dist){
 		restore_pad_set(pad_set_old);
+		clog<<"restore pad set. "<<endl;
 		//return;
-	}else{ // else store new pad set
+	}else{*/ // else store new pad set
 		assign_pad_set(pad_set_old);
+		clog<<"assign pad. "<<endl;
 		project_pads();
-	}
+		clog<<"project pads. "<<endl;
+	//}
+		/*clog<<"before while. "<<endl;
+		int count = 0;
+		while(new_dist < dist){
+			dist = new_dist;
 
-	while(new_dist < dist){
-		dist = new_dist;
-
-		//print_pad_set();
-		expand_region();
-		new_dist = update_pad_pos();
-		if(new_dist > dist){
-			restore_pad_set(pad_set_old);
-		}
-		else{
-			assign_pad_set(pad_set_old); 
-			project_pads();
-		}
-	}
+			//print_pad_set();
+			expand_region();
+			clog<<"after expand region. "<<endl;
+			new_dist = update_pad_pos();
+			clog<<"new dist: "<<new_dist<<endl;
+			if(new_dist > dist){
+				restore_pad_set(pad_set_old);
+			}
+			else{
+				assign_pad_set(pad_set_old); 
+				project_pads();
+			}
+			clog<<"while loop "<<count++<<endl;
+		}*/
+	
 	pad_set_old.clear();
 	clog<<endl<<endl;
 	for(size_t i=0;i<pad_set.size();i++){
-		clog<<"Final pad_set: "<<i<<" "<<*pad_set[i]->node<<endl;
+		cout<<"Final pad_set: "<<i<<" "<<*pad_set[i]->node<<endl;
 	}
 
 	rebuild_voltage_nets();
+	//}
 	solve_LU_core();
 	
 	double max_IR = locate_maxIRdrop();	
@@ -1506,14 +1549,19 @@ double Circuit::update_pad_pos(){
 			weighted_y += dist * nd->pt.y;
 			sum_weight += dist; 	
 		}
-		pad_newx = weighted_x / sum_weight;
-		pad_newy = weighted_y / sum_weight;
-						
-		round_data(pad_newx);
-		round_data(pad_newy);
+		if(sum_weight !=0){
+			pad_newx = weighted_x / sum_weight;
+			pad_newy = weighted_y / sum_weight;
 
-		pad_ptr->newx = pad_newx;
-		pad_ptr->newy = pad_newy;
+			round_data(pad_newx);
+			round_data(pad_newy);
+
+			pad_ptr->newx = pad_newx;
+			pad_ptr->newy = pad_newy;
+		}else{
+			pad_ptr->newx = pad->pt.x;
+			pad_ptr->newy = pad->pt.y;
+		}
  
 		double temp = sqrt(weighted_x*weighted_x 			 + weighted_y*weighted_y);
 		total_dist += temp;
@@ -1521,7 +1569,7 @@ double Circuit::update_pad_pos(){
 			//temp<<endl;
 	}
 
-	//clog<<"total_dist: "<<total_dist<<endl<<endl;
+	clog<<"total_dist: "<<total_dist<<endl<<endl;
 	return total_dist;
 }
 
@@ -1571,13 +1619,18 @@ Node * Circuit::pad_projection(Pad *pad){
 	pt.z = nd->get_layer();
 	pt.x = pad->newx;
 	pt.y = pad->newy;
+	if(pad->newx == nd->pt.x && 
+		pad->newy == nd->pt.y)
+		return nd;
 
 	sstream<<pt.z<<"_"<<pt.x<<"_"<<pt.y; 
 	pt_name = sstream.str();
 	// first see if this node is on grid
 	// and if it is occupied by pad or not
+	//clog<<"orig pad: "<<*nd<<endl;
 	if(has_node_pt(pt_name)){
 		nd_new = get_node_pt(pt_name);
+		//clog<<"has new node: "<<*nd_new<<" "<<nd_new->isX()<<endl;
 		// if this node is not occupied by pad
 		if(!nd_new->isX()){
 			nd->disableX();
@@ -1587,7 +1640,6 @@ Node * Circuit::pad_projection(Pad *pad){
 			return nd_new;
 		}
 	}
-
 	bool return_flag = false;
 	// else start to search for node
 	q.push(pt);
@@ -1607,11 +1659,14 @@ Node * Circuit::pad_projection(Pad *pad){
 			pt_name = sstream.str();
 			if(has_node_pt(pt_name)){
 				nd_new = get_node_pt(pt_name);
+
+				//clog<<"new name: "<<*nd_new<<" "<<nd_new->isX()<<endl;
 				if(!nd_new->isX()){
 					nd->disableX();
 					nd_new->enableX();
 					nd_new->value = VDD;
 					return_flag = true;
+					//clog<<"break. "<<endl;
 					break;
 				}
 			}
