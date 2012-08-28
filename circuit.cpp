@@ -1318,7 +1318,7 @@ Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
 {
 			// assign initial weight
 			double distance = nd->distance 
-				+ 1.0/net->value;
+				+ net->value;
 			if(nbr->distance == -1 || 
 			   distance < nbr->distance){
 				//cout<<"nbr, distance, calc: "<<*nbr<<" "<<nbr->distance<<" "<<distance<<endl;
@@ -1431,23 +1431,22 @@ void Circuit::relocate_pads(){
 	dist = update_pad_pos();
 	project_pads();
 
-	print_pad_set();
+	//print_pad_set();
 	expand_region();
 	new_dist = update_pad_pos();
 	// restore pads into old positions
 	if(new_dist > dist){
 		restore_pad_set(pad_set_old);
-		return;
+		//return;
 	}else{ // else store new pad set
 		assign_pad_set(pad_set_old);
-		//clog<<"after assigning pad set."<<endl;
 		project_pads();
 	}
 
 	while(new_dist < dist){
 		dist = new_dist;
 
-		print_pad_set();
+		//print_pad_set();
 		expand_region();
 		new_dist = update_pad_pos();
 		if(new_dist > dist){
@@ -1499,6 +1498,10 @@ double Circuit::update_pad_pos(){
 		    it++){
 			nd = it->first;
 			dist = it->second;
+			//double diff_x = pad->pt.x - nd->pt.x;
+			//double diff_y = pad->pt.y - nd->pt.y;
+			//double temp_dist = sqrt(diff_x*diff_x + diff_y * diff_y);
+			//clog<<"node: "<<*nd<<" "<<dist * temp_dist<<endl;
 			weighted_x += dist * nd->pt.x;
 			weighted_y += dist * nd->pt.y;
 			sum_weight += dist; 	
@@ -1518,7 +1521,7 @@ double Circuit::update_pad_pos(){
 			//temp<<endl;
 	}
 
-	clog<<"total_dist: "<<total_dist<<endl<<endl;
+	//clog<<"total_dist: "<<total_dist<<endl<<endl;
 	return total_dist;
 }
 
@@ -1711,14 +1714,6 @@ void Circuit::rebuild_voltage_nets(){
 		delete rm_net[i];
 	}
 	origin_pad_set.clear();
-	/*for(size_t i=0;i<net_set[type].size();i++){
-		net = net_set[type][i];
-		clog<<"final VDD net: "<<*net<<endl;
-	}
-	for(size_t i=0;i<nodelist.size()-1;i++){
-		clog<<*nodelist[i]<<" "<<nodelist[i]->isX()<<endl;
-	}*/
-
 }
 
 void Circuit::print_pad_set(){
