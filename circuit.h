@@ -127,8 +127,9 @@ public:
 	void assign_pad_set(vector<Node*>&pad_set_old);
 	void rebuild_voltage_nets();
 	void print_pad_set();
-	void extract_pads();
+	void extract_pads(int pad_number);
 	void print_matlab();
+	void clear_pad_control_nodes();
 	//////// end functions for pad ////////
 
 	// C style output
