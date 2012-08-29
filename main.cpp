@@ -107,6 +107,7 @@ int main(int argc, char * argv[]){
 			double special_IRdrop = ckt->locate_special_maxIRdrop();
 			clog<<"special IRdrop is: "<<special_IRdrop<<endl;
 			ckt->relocate_pads();
+			ckt->print_matlab();
 			//ckt->build_pad_set();
 			//cktlist[i]->print();
 			clog<<endl;

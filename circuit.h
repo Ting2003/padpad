@@ -104,7 +104,8 @@ public:
 	////// new functions for pad /////
 	void expand_region();
 	void expand_region_of_a_node(Node *nd_s);
-	void update_queue(queue<Node*> &q, Node *nd, int &count);
+	void update_queue(Node *nds, queue<Node*> &q, Node *nd, int &count, double &dist);
+	void assign_distance(Node *nds, Node *nd, double dist);
 	void find_shortest_paths(Node *nds);
 	void map_min_dist_to_pad(Node *nds);
 	Node* update_distance(Node *nd, 
@@ -126,6 +127,8 @@ public:
 	void assign_pad_set(vector<Node*>&pad_set_old);
 	void rebuild_voltage_nets();
 	void print_pad_set();
+	void extract_pads();
+	void print_matlab();
 	//////// end functions for pad ////////
 
 	// C style output

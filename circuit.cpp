@@ -227,8 +227,11 @@ void Circuit::mark_special_nodes(){
 		nd = net->ab[0];
 		if(nd->is_ground())
 			nd = net->ab[1];
-		if(i%8000==0)
+		//if(nd->pt.x%20==0 &&
+			//nd->pt.y%20==0){// i%4000==0){
 			special_nodes.push_back(nd);
+			//clog<<"special_nodes: "<<*nd<<endl;
+		//}
 	}
 	clog<<"total special nodes: "<<special_nodes.size()<<endl;
 	/*for(size_t i=0;i<nodelist.size()-1;i++){
@@ -1225,7 +1228,7 @@ void Circuit::expand_region(){
 	Node *nd;
 	for(size_t i=0;i<special_nodes.size();i++){
 		nd = special_nodes[i];
-		//cout<<endl<<"special node: "<<*nd<<endl;
+		cout<<endl<<"special node: "<<*nd<<endl;
 		// mark nodes with region flag
 		clock_t t1, t2;
 		t1 = clock();
@@ -1235,14 +1238,14 @@ void Circuit::expand_region(){
 			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 		// find the weighted shortest_path for 
 		// all nodes in the region of this node
-		t1 = clock();
+		/*t1 = clock();
 		find_shortest_paths(nd);
 		t2 = clock();
 		//cout<<i<<" find shortest path cost: "<<
 			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 		//print_distance(nd);
 		t1 = clock();
-		map_min_dist_to_pad(nd);
+		map_min_dist_to_pad(nd);*/
 		t2 = clock();
 		//cout<<i<<" map mpad cost: "<<
 			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
@@ -1260,8 +1263,9 @@ void Circuit::expand_region(){
 // expand the region for each node, covering 10 pads
 void Circuit::expand_region_of_a_node(Node *nds){
 	// stop when reaching pad_number
-	int pad_number = 10;//pad_set.size();//2; 	
+	int pad_number = 5;//pad_set.size();//2; 	
 	int count = 0;
+	double dist = 0;
 	queue<Node*> q;
 	q.push(nds);
 	nds->region_flag = true;
@@ -1271,7 +1275,7 @@ void Circuit::expand_region_of_a_node(Node *nds){
 	while(count < pad_number || !q.empty()){
 		Node * nd = q.front();
 		// add neighboring nodes into queue
-		update_queue(q, nd, count);
+		update_queue(nds, q, nd, count, dist);
 		q.pop();
 		if(count == pad_number){
 			while(!q.empty()){
@@ -1282,7 +1286,79 @@ void Circuit::expand_region_of_a_node(Node *nds){
 	}
 }
 
-void Circuit::update_queue(queue<Node*> &q, Node *nd, int &count){
+void Circuit::extract_pads(){
+	vector<Node*> pair_first;
+	vector<double> pair_second;
+	pair<Node*, double> pair_nd;
+	int pad_number = 5;
+	double distance = 0;
+	double delta_x = 0;
+	double delta_y = 0;
+	map<Node*, double>::iterator it;
+	for(size_t i=0;i<special_nodes.size();i++){
+		int count = 0;
+		pair_first.clear();
+		pair_second.clear();
+		Node *nd = special_nodes[i];
+		//if(nd->name == "n0_179_500")
+			//cout<<endl<<"nd: "<<*nd<<endl;
+		// search for closest pads
+		for(size_t j=0;j<pad_set.size();j++){
+			Node *ptr = pad_set[j]->node;
+			delta_x=(ptr->pt.x-nd->pt.x);
+			delta_y=(ptr->pt.y-nd->pt.y);
+			delta_x *= delta_x;
+			delta_y *= delta_y;
+			distance = sqrt(delta_x + delta_y);
+
+			//if(nd->name == "n0_499_500")
+			//cout<<"nd, pad, dist: "<<*nd<<" "<<*ptr<<" "<<distance<<endl;
+			if(count < pad_number){
+				pair_first.push_back(ptr);
+				pair_second.push_back(distance);
+				count++;
+			}else{// substitute the pad node
+				double max_dist = 0;
+				size_t max_index = 0;
+				for(size_t k=0;k<pair_second.size();k++){
+					if(pair_second[k]>max_dist){
+						max_dist = pair_second[k];
+						max_index = k;
+					}
+				}
+					//if(distance < pair_second[k]){
+				pair_first[max_index] = ptr;
+				pair_second[max_index] = distance;
+						//break;
+					//}
+				//}	
+			}
+		}
+		// then map these distance into pads
+		for(size_t j=0;j<pair_first.size();j++){
+			Node *ptr = pair_first[j];
+			//if(nd->name == "n0_499_500")
+				//cout<<"pad, dist: "<<*ptr<<" "<<pair_second[j]<<endl;
+			for(size_t k=0;k<pad_set.size();k++){
+				if(pad_set[k]->node->name == ptr->name){
+					// control nodes
+					pair_nd.first = nd;
+					// distance
+					pair_nd.second = pair_second[j];
+					pad_set[k]->control_nodes.insert(pair_nd);
+					//if(nd->name == "n0_179_500")
+					//cout<<"control nodes, dist: "<< *pair_nd.first<<" "<<
+						//pair_nd.second<<endl;
+					break;
+				}
+			}
+		}
+	}
+	pair_first.clear();
+	pair_second.clear();
+}
+
+void Circuit::update_queue(Node *nds, queue<Node*> &q, Node *nd, int &count, double &dist){
 	Net * net; Node *nbr;
 	Node *na, *nb;
 	for(int i=0;i<6;i++){
@@ -1297,12 +1373,33 @@ void Circuit::update_queue(queue<Node*> &q, Node *nd, int &count){
 		else	nbr = na;
 		if(!nbr->is_ground()&& !nbr->region_flag){
 			//cout<<"nbr: "<<*nbr<<endl;
+			dist += net->value;
 			q.push(nbr);
 			nbr->region_flag = true;
 			if(nbr->isX()== true){
 				count ++;
+				assign_distance(nds, nbr, dist);
+				
 				//cout<<"add a new pad: "<<*nbr<<" "<<count<<endl;
 			}
+		}
+	}
+}
+
+void Circuit::assign_distance(Node *nds, Node *nd, double dist){
+	Node *ndt;
+	pair<Node*, double> pad_pair;
+
+	
+	for(size_t i=0;i<pad_set.size();i++){
+		ndt = pad_set[i]->node;
+		if(nd->name == ndt->name){
+			cout<<"pad: "<<*ndt<<endl;
+			cout<<"source node, dist: "<<*nds<<" "<<dist<<endl;
+			pad_pair.first = nds;
+			pad_pair.second = dist*fabs(VDD-nds->value);
+			pad_set[i]->control_nodes.insert(pad_pair);
+			break;
 		}
 	}
 }
@@ -1442,7 +1539,6 @@ void Circuit::clear_flags(){
 }
 
 void Circuit::relocate_pads(){
-	clog<<"start to relocate pads. "<<endl;
 	vector<Node*> pad_set_old;
 	double dist = 0;
 	double new_dist = 0;
@@ -1455,64 +1551,29 @@ void Circuit::relocate_pads(){
 	
 	//print_pad_set();
 	clog<<"pad set size: "<<pad_set.size()<<endl;
-	clog<<"before expand region."<<endl;
-	expand_region();
-	clog<<"finish first expand region. "<<endl;
-	dist = update_pad_pos();
-	clog<<"finish first update pad pos. "<<endl;
-	project_pads();
-	clog<<"finish first project pads. "<<endl;
-
-	//print_pad_set();
-	expand_region();
-	clog<<"before expand region."<<endl;
-	new_dist = update_pad_pos();
-	clog<<"finish first update pad pos. "<<endl;
-	// restore pads into old positions
-	/*if(new_dist > dist){
-		restore_pad_set(pad_set_old);
-		clog<<"restore pad set. "<<endl;
-		//return;
-	}else{*/ // else store new pad set
+	for(size_t i=0;i<2;i++){
+		extract_pads();
+		//print_pad_map();
+		clog<<"finish first expand region. "<<endl;
+		dist = update_pad_pos();
 		assign_pad_set(pad_set_old);
-		clog<<"assign pad. "<<endl;
 		project_pads();
-		clog<<"project pads. "<<endl;
-	//}
-		/*clog<<"before while. "<<endl;
-		int count = 0;
-		while(new_dist < dist){
-			dist = new_dist;
 
-			//print_pad_set();
-			expand_region();
-			clog<<"after expand region. "<<endl;
-			new_dist = update_pad_pos();
-			clog<<"new dist: "<<new_dist<<endl;
-			if(new_dist > dist){
-				restore_pad_set(pad_set_old);
-			}
-			else{
-				assign_pad_set(pad_set_old); 
-				project_pads();
-			}
-			clog<<"while loop "<<count++<<endl;
-		}*/
-	
-	pad_set_old.clear();
-	clog<<endl<<endl;
-	for(size_t i=0;i<pad_set.size();i++){
-		cout<<"Final pad_set: "<<i<<" "<<*pad_set[i]->node<<endl;
+		dist = update_pad_pos();
+		clog<<"finish first update pad pos. "<<endl;
+		project_pads();
+		clog<<"finish first project pads. "<<endl;
+
+		rebuild_voltage_nets();
+		solve_LU_core();
+
+		double max_IR = locate_maxIRdrop();	
+		double max_IRS = locate_special_maxIRdrop();
+		clog<<"max_IR is: "<<max_IR<<endl;
+		clog<<"max_IRS is: "<<max_IRS<<endl<<endl;
 	}
 
-	rebuild_voltage_nets();
-	//}
-	solve_LU_core();
-	
-	double max_IR = locate_maxIRdrop();	
-	double max_IRS = locate_special_maxIRdrop();
-	clog<<"max_IR is: "<<max_IR<<endl;
-	clog<<"max_IRS is: "<<max_IRS<<endl;
+	//print_pad_set();
 }
 
 // decide pad's new pos with the weights
@@ -1522,42 +1583,52 @@ double Circuit::update_pad_pos(){
 	Node *pad;
 	Pad *pad_ptr;
 	Node *nd;
-	double sum_weight = 0;
-	double weighted_x =0;
-	double weighted_y =0;
-	double dist = 0;
+	double weight = 0;
 	double pad_newx;
 	double pad_newy;
 	map<Node *, double>::iterator it;
 	// build up the map for nodes in PAD layer
 	build_map_node_pt();
 
+	clog<<pad_set.size()<<endl;
 	for(size_t i=0;i<pad_set.size();i++){
+		if(pad_set[i]->control_nodes.size()==0)
+			continue;
+
+		double sum_weight = 0;
+		double weighted_x =0;
+		double weighted_y =0;
 		pad_ptr = pad_set[i];
 		pad = pad_ptr->node;
-		//cout<<"pad_node: "<<*pad<<endl;
+		//cout<<endl<<"i, pad_node: "<<i<<" "<<*pad<<endl;
 		for(it = pad_ptr->control_nodes.begin();
 		    it != pad_ptr->control_nodes.end();
 		    it++){
 			nd = it->first;
-			dist = it->second;
-			//double diff_x = pad->pt.x - nd->pt.x;
-			//double diff_y = pad->pt.y - nd->pt.y;
-			//double temp_dist = sqrt(diff_x*diff_x + diff_y * diff_y);
-			//clog<<"node: "<<*nd<<" "<<dist * temp_dist<<endl;
-			weighted_x += dist * nd->pt.x;
-			weighted_y += dist * nd->pt.y;
-			sum_weight += dist; 	
+			weight = 1.0/it->first->value;
+			if(weight <0)
+				weight *=10;
+			//if(pad->name == "n0_0_500")
+			//cout<<"control node, weight: "<<*nd<<" "<<weight<<endl;
+			weighted_x += weight * nd->pt.x;
+			//cout<<"weighted_x: "<<weighted_x<<endl;
+			weighted_y += weight * nd->pt.y;
+			sum_weight += weight; 	
 		}
 		if(sum_weight !=0){
+			//cout<<"sum_weight: "<<sum_weight<<endl;
 			pad_newx = weighted_x / sum_weight;
 			pad_newy = weighted_y / sum_weight;
 
 			round_data(pad_newx);
 			round_data(pad_newy);
 
+			//if(pad->name == "n0_0_500")
+			//cout<<"pad_newx, pad_newy: "<<
+				//pad_newx<<" "<<pad_newy<<endl;
 			pad_ptr->newx = pad_newx;
 			pad_ptr->newy = pad_newy;
+			//cout<<"old_pt, new_pt: "<<pad->pt.x<<" "<<pad->pt.y<<" "<<pad_newx<<" "<<pad_newy<<endl;
 		}else{
 			pad_ptr->newx = pad->pt.x;
 			pad_ptr->newy = pad->pt.y;
@@ -1579,12 +1650,17 @@ void Circuit::project_pads(){
 	Pad *pad_ptr;
 
 	for(size_t i=0;i<pad_set.size();i++){
+		if(pad_set[i]->control_nodes.size()==0)
+			continue;
 		pad_ptr = pad_set[i];
 		pad = pad_ptr->node;
 		// search for nearest node to (pad_newx,
 		// pad_newy)
+		if(pad->name=="n0_0_500")
+		clog<<"old_pad: "<<*pad<<endl;
 		new_pad = pad_projection(pad_ptr);
-		//clog<<"new_pad: "<<*new_pad<<endl;
+		if(pad->name == "n0_0_500")
+		clog<<"new_pad: "<<*new_pad<<endl<<endl;
 		// update pad information
 		pad_ptr->node = new_pad;
 		pad_ptr->control_nodes.clear();	
@@ -1612,8 +1688,9 @@ Node * Circuit::pad_projection(Pad *pad){
 	stringstream sstream;
 	string pt_name;
 	Node *nd_new=NULL;
-	double dx[4] = {1, 0, -1, 0};
-	double dy[4] = {0, 1, 0, -1};
+	//int gap - 10;
+	double dx[4] = {30, 0, -30, 0};
+	double dy[4] = {0, 30, 0, -30};
 
 	nd = pad->node;
 	pt.z = nd->get_layer();
@@ -1660,7 +1737,7 @@ Node * Circuit::pad_projection(Pad *pad){
 			if(has_node_pt(pt_name)){
 				nd_new = get_node_pt(pt_name);
 
-				//clog<<"new name: "<<*nd_new<<" "<<nd_new->isX()<<endl;
+				//cout<<"new name: "<<*nd_new<<" "<<nd_new->isX()<<endl;
 				if(!nd_new->isX()){
 					nd->disableX();
 					nd_new->enableX();
@@ -1773,6 +1850,22 @@ void Circuit::rebuild_voltage_nets(){
 
 void Circuit::print_pad_set(){
 	for(size_t i=0;i<pad_set.size();i++){
-		clog<<"pad: "<<*pad_set[i]->node<<endl;
+		//clog<<"pad: "<<*pad_set[i]->node<<endl;
+		printf("%d %d\n", pad_set[i]->node->pt.x+1, pad_set[i]->node->pt.y+1);
 	}		
+}
+
+void Circuit::print_matlab(){
+	// uncomment this if want to output to a file
+	//freopen("output.txt","w",stdout);
+
+	// don't output ground node
+	size_t count = 0;
+	for(size_t i=0;i<nodelist.size()-1;i++){
+		printf("%ld %ld  %.5e\n", nodelist[i]->pt.y+1, nodelist[i]->pt.x+1, 
+				VDD-nodelist[i]->value);
+		if(nodelist[i]->value==VDD)
+			count += 1;
+	}
+	clog<<"VDD # is: "<<count<<endl;
 }
