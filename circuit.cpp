@@ -1351,7 +1351,7 @@ void Circuit::extract_pads(int pad_number){
 			}
 		}
 	}
-	print_pad_map();	
+	//print_pad_map();	
 	pair_first.clear();
 	pair_second.clear();
 	//print_pad_map();
@@ -1630,7 +1630,7 @@ void Circuit::print_pad_map(){
 	for(size_t i=0;i<pad_set.size();i++){
 		nd = pad_set[i];
 		if((nd->node->name != "n0_15_20" && 
-			nd->node->name != "n0_69_18"))// &&
+			nd->node->name != "n0_11_78"))// &&
 			//if(nd->node->name !="n0_52_60")
 			//if(nd->node->name !="n0_74_91") 
 			//if(nd->node->name !="n0_77_26")
@@ -1758,6 +1758,12 @@ double Circuit::update_pad_pos(double ref_drop_value, size_t i){
 		    it++){
 			if(it->second > ref_drop_value)
 				continue;
+			if((pad->name == "n0_15_20" || 
+			pad->name == "n0_11_78")){
+			//cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
+			printf("%ld %ld  %.5e\n", it->first->pt.y+1, it->first->pt.x+1, it->first->value);
+			
+		}
 			nd = it->first;
 			weight = 1.0/it->second;
 			weighted_x += weight * nd->pt.x;
@@ -1802,9 +1808,9 @@ void Circuit::project_pads(){
 		// pad_newy)
 		
 		new_pad = pad_projection(pad_ptr, pad);
-		if(pad->name == "n0_14_15" ||
+		if(pad->name == "n0_15_20" ||
 			//pad->name == "n0_50_150"||
-			pad->name == "n0_57_15")
+			pad->name == "n0_11_78")
 			clog<<"old pad / new pad: "<<*pad<<" "<<*new_pad<<endl;
 		// update pad information
 		pad_ptr->node = new_pad;
