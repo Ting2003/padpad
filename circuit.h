@@ -18,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 #include <tr1/unordered_map>
 #include <map>
 #include <queue>
@@ -115,9 +116,10 @@ public:
 	void print_distance(Node *nd);
 	void print_pad_map();
 	void clear_flags();
-	double update_pad_pos();
+	double update_pad_pos(double ref_drop_value, size_t i);
+	double update_pad_pos_all(vector<double> ref_drop_vec);
 	void round_data(double &data);
-	Node * pad_projection(Pad *pad);
+	Node * pad_projection(Pad *pad, Node *nd);
 	void project_pads();
 	bool has_node_pt(string pt_name) const;
 	Node * get_node_pt(string pt_name);
@@ -130,6 +132,8 @@ public:
 	void extract_pads(int pad_number);
 	void print_matlab();
 	void clear_pad_control_nodes();
+	void update_pad_control_nodes(vector<double> & ref_drop_vec, size_t iter);
+	void extract_min_max_pads(vector<double> ref_drop_vec);
 	//////// end functions for pad ////////
 
 	// C style output
@@ -320,6 +324,8 @@ inline Net * Circuit::get_net(string name){return map_net[name];}
 */
 
 bool compare_node_ptr(const Node *a, const Node *b);
+bool compare_pads(const pair<Node*, double> a, const 
+	pair<Node*, double> b);
 ostream & operator << (ostream & os, const NodePtrVector & nodelist);
 ostream & operator << (ostream & os, const NetList & nets);
 //ostream & operator << (ostream & os, const vector<Block > & block_info);
