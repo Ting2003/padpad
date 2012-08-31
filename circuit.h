@@ -131,7 +131,7 @@ public:
 	void graph_move_pads(vector<double> ref_drop_vec);
 	int locate_max_drop_pad(vector<double> vec);
 	double calc_avg_ref(vector<double> ref_drop_vec);
-	double locate_ref(size_t i, double ratio);
+	double locate_ref(size_t i);
 	//////// end functions for pad ////////
 
 	// C style output

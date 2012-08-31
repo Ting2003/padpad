@@ -7,13 +7,17 @@ using namespace std;
 Pad::Pad(): node(NULL){
 	control_nodes.clear();
 	nbrs.clear();
+	drop_vec.clear();
 	newx = 0;
 	newy = 0;
 	visit_flag = false;
 	fix_flag = false;
+	data = 0;
+	ratio = 0;
 }
 
 Pad::~Pad(){
 	control_nodes.clear();
 	nbrs.clear();
+	drop_vec.clear();
 }

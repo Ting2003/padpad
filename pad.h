@@ -21,9 +21,13 @@ public:
 	// record the controlled nodes and weighting
 	map<Node*, double> control_nodes;
 	vector<Pad*> nbrs;
+	// sorted ref drop values of control nodes
+	vector<double> drop_vec;
 	double newx;
 	double newy;
 	bool visit_flag;
 	bool fix_flag;
+	double data; // stores the maximum diff
+	size_t ratio;
 };
 #endif

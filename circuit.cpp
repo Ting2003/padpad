@@ -1365,7 +1365,7 @@ void Circuit::update_pad_control_nodes(vector<double> & ref_drop_value, size_t i
 	for(size_t i=0;i<pad_set.size();i++){
 		if(pad_set[i]->control_nodes.size()==0)
 			continue;
-		double middle_value = locate_ref(i, 2);
+		double middle_value = locate_ref(i);
 		ref_drop_value[i] = middle_value;
 		//clog<<"middle value: "<<middle_value<<endl;
 	}
@@ -1621,6 +1621,7 @@ double Circuit::calc_avg_ref(vector<double> ref_drop_vec){
 			pad->name == "n0_162_159")){*/
 		if(data[i]>=2*avg_drop){
 			cout<<"avg, data, pad: "<<avg_drop<<" "<<data[i]<<" "<<*pad_set[i]->node<<endl;
+			double ratio = 2*2;
 			//double middle_value = drop_vec[drop_vec.size()/2];
 		}
 	}
@@ -2099,16 +2100,16 @@ int Circuit::locate_max_drop_pad(vector<double> vec){
 }
 
 // locate the tune spot for the control nodes.
-double Circuit::locate_ref(size_t i, double ratio){
+double Circuit::locate_ref(size_t i){
 	Pad *pad_ptr;
 	Node *pad;
 	map<Node*, double>::iterator it;
 	Node *nd;
 	double weight = 0;
-	vector<double> drop_vec;
+	//vector<double> drop_vec;
 	pad_ptr = pad_set[i];
 	pad = pad_ptr->node;
-	drop_vec.clear();
+	pad_ptr->drop_vec.clear();
 	for(it = pad_ptr->control_nodes.begin();
 			it != pad_ptr->control_nodes.end();
 			it++){
@@ -2118,11 +2119,13 @@ double Circuit::locate_ref(size_t i, double ratio){
 			weight *=10;
 
 		pad_ptr->control_nodes[nd] = weight;
-		drop_vec.push_back(nd->value); 
+		pad_ptr->drop_vec.push_back(nd->value); 
 	}
-	sort(drop_vec.begin(), drop_vec.end(),
+	sort(pad_ptr->drop_vec.begin(), pad_ptr->drop_vec.end(),
 			compare_values);
-	double middle_value = drop_vec[drop_vec.size()/ratio];
-	drop_vec.clear();
+	pad_ptr->ratio = 2;
+	size_t id = pad_ptr->drop_vec.size() / pad_ptr->ratio;
+	double middle_value = pad_ptr->drop_vec[id];
+	//drop_vec.clear();
 	return middle_value;
 }
