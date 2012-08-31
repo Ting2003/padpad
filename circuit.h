@@ -103,17 +103,7 @@ public:
 	unordered_map<string, Node*> map_node_pt;
 
 	////// new functions for pad /////
-	void expand_region();
-	void expand_region_of_a_node(Node *nd_s);
-	void update_queue(Node *nds, queue<Node*> &q, Node *nd, int &count, double &dist);
 	void assign_distance(Node *nds, Node *nd, double dist);
-	void find_shortest_paths(Node *nds);
-	void map_min_dist_to_pad(Node *nds);
-	Node* update_distance(Node *nd, 
-		vector<Node *> &front_nodes);
-	Node* min_dist_front_node(vector<Node*> 
-		front_nodes);
-	void print_distance(Node *nd);
 	void print_pad_map();
 	void clear_flags();
 	double update_pad_pos(double ref_drop_value, size_t i);
@@ -125,6 +115,7 @@ public:
 	Node * get_node_pt(string pt_name);
 	void build_map_node_pt();
 	void relocate_pads();
+	void relocate_pads_graph();
 	void restore_pad_set(vector<Node*>&pad_set_old);
 	void assign_pad_set(vector<Node*>&pad_set_old);
 	void rebuild_voltage_nets();
@@ -134,6 +125,11 @@ public:
 	void clear_pad_control_nodes();
 	void update_pad_control_nodes(vector<double> & ref_drop_vec, size_t iter);
 	void extract_min_max_pads(vector<double> ref_drop_vec);
+	void build_graph();
+	Pad *find_nbr_pad(Pad *pad);
+	double get_distance(Node *na, Node *nb);
+	void graph_move_pads(vector<double> ref_drop_vec);
+	int locate_max_drop_pad(vector<double> vec);
 	//////// end functions for pad ////////
 
 	// C style output
@@ -326,6 +322,7 @@ inline Net * Circuit::get_net(string name){return map_net[name];}
 bool compare_node_ptr(const Node *a, const Node *b);
 bool compare_pads(const pair<Node*, double> a, const 
 	pair<Node*, double> b);
+bool pad_equal(Pad *pa, Pad *pb);
 ostream & operator << (ostream & os, const NodePtrVector & nodelist);
 ostream & operator << (ostream & os, const NetList & nets);
 //ostream & operator << (ostream & os, const vector<Block > & block_info);

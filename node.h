@@ -60,13 +60,7 @@ public:
 	size_t rid;		// id in rep_list
 
 	//////// member and function for pad //////
-	bool visit_flag;
-	bool region_flag;
-	bool traverse_flag;
-	double distance;
 	
-	bool isVisited() const;
-	bool inRegion() const;
 	// disable the flag of some pad node
 	void disableX();
 	// enable the flag of some pad node
@@ -125,8 +119,4 @@ inline bool Node::is_mergeable() const{
 	    ||(nbr[NORTH] != NULL && nbr[SOUTH] != NULL &&
 	       nbr[EAST]  == NULL && nbr[WEST] == NULL));
 }
-
-inline bool Node::isVisited() const{return visit_flag;}
-inline bool Node::inRegion() const{return region_flag;}
-
 #endif

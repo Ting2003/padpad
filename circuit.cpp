@@ -237,7 +237,7 @@ void Circuit::mark_special_nodes(){
 			//clog<<"special_nodes: "<<*nd<<endl;
 		//}
 	}
-	clog<<"total special nodes: "<<special_nodes.size()<<endl;
+	//clog<<"total special nodes: "<<special_nodes.size()<<endl;
 	/*for(size_t i=0;i<nodelist.size()-1;i++){
 		if(nodelist[i]->name == "n0_0_0" ||
 		   nodelist[i]->name =="n0_1_2")//"n0_150_100")
@@ -1200,7 +1200,6 @@ double Circuit::locate_maxIRdrop(){
 }
 
 double Circuit::locate_special_maxIRdrop(){
-	mark_special_nodes();
 	double max_IRdrop = 0;
 	Node *nd;
 	for(size_t j=0;j<special_nodes.size(); 
@@ -1227,77 +1226,12 @@ void Circuit::build_pad_set(){
 		//clog<<"pad: "<<*pad_set[j]->node<<endl;
 }
 
-// expand the regions for all the special nodes
-void Circuit::expand_region(){
-	Node *nd;
-	for(size_t i=0;i<special_nodes.size();i++){
-		nd = special_nodes[i];
-		cout<<endl<<"special node: "<<*nd<<endl;
-		// mark nodes with region flag
-		clock_t t1, t2;
-		t1 = clock();
-		expand_region_of_a_node(nd);
-		t2 = clock();
-		//cout<<i<<" expand region. "<<
-			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
-		// find the weighted shortest_path for 
-		// all nodes in the region of this node
-		/*t1 = clock();
-		find_shortest_paths(nd);
-		t2 = clock();
-		//cout<<i<<" find shortest path cost: "<<
-			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
-		//print_distance(nd);
-		t1 = clock();
-		map_min_dist_to_pad(nd);*/
-		t2 = clock();
-		//cout<<i<<" map mpad cost: "<<
-			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
-		// clear region, traversal, visit flag
-		t1 = clock();
-		clear_flags();
-		t2 = clock();
-		//cout<<i<<" clear flags cost: "<<
-			//1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
-	}
-
-	//print_pad_map();
-}
-
-// expand the region for each node, covering 10 pads
-void Circuit::expand_region_of_a_node(Node *nds){
-	// stop when reaching pad_number
-	int pad_number = 5;//pad_set.size();//2; 	
-	int count = 0;
-	double dist = 0;
-	queue<Node*> q;
-	q.push(nds);
-	nds->region_flag = true;
-	if(nds->isX())
-		count ++;
-	//cout<<"nds: "<<*nds<<endl;
-	while(count < pad_number || !q.empty()){
-		Node * nd = q.front();
-		// add neighboring nodes into queue
-		update_queue(nds, q, nd, count, dist);
-		q.pop();
-		if(count == pad_number){
-			while(!q.empty()){
-				q.pop();
-			}
-			break;
-		}
-	}
-}
-
 void Circuit::extract_pads(int pad_number){
 	vector<Node*> pair_first;
 	vector<double> pair_second;
 	pair<Node*, double> pair_nd;
 	//int pad_number = 5;
 	double distance = 0;
-	double delta_x = 0;
-	double delta_y = 0;
 	map<Node*, double>::iterator it;
 
 	clear_pad_control_nodes();
@@ -1309,11 +1243,7 @@ void Circuit::extract_pads(int pad_number){
 		// search for closest pads
 		for(size_t j=0;j<pad_set.size();j++){
 			Node *ptr = pad_set[j]->node;
-			delta_x=(ptr->pt.x-nd->pt.x);
-			delta_y=(ptr->pt.y-nd->pt.y);
-			delta_x *= delta_x;
-			delta_y *= delta_y;
-			distance = sqrt(delta_x + delta_y);
+			distance = get_distance(ptr, nd);
 
 			if(count < pad_number){
 				pair_first.push_back(ptr);
@@ -1374,13 +1304,14 @@ void Circuit::extract_min_max_pads(vector<double> ref_drop_vec){
 			min_index=j;
 		}
 	}
+	clog<<"min, max: "<<min<<" "<<max<<endl;
 	for(size_t j=0;j<ref_drop_vec.size();j++){
-		if(VDD - ref_drop_vec[j]<max*0.2){
+		if(VDD - ref_drop_vec[j]<=max*0.5){
 			min_pads.push_back(pad_set[j]->node);
 		}
 	//}
 	//for(size_t j=0;j<ref_drop_vec.size();j++){
-		if(VDD-ref_drop_vec[j]>max*0.9){
+		if(VDD-ref_drop_vec[j]>=max*0.8){
 			max_pads.push_back(pad_set[j]->node);
 		}
 	}
@@ -1393,7 +1324,6 @@ void Circuit::extract_min_max_pads(vector<double> ref_drop_vec){
 	for(size_t j=0;j<min_pads.size();j++){
 		size_t i = j % max_pads.size();
 		Node * nd = max_pads[i];
-		//clog<<"min_pads, max_pads: "<<*min_pads[j]<<" "<<*max_pads[i]<<endl;
 		for(size_t k=0;k<pad_set.size();k++){
 			if(pad_set[k]->node->name == 
 				nd->name){	
@@ -1408,7 +1338,6 @@ void Circuit::extract_min_max_pads(vector<double> ref_drop_vec){
 		for(size_t k=0;k<pad_set.size();k++){
 			if(pad_set[k]->node->name == 
 				min_pads[j]->name){
-				//clog<<"min_pad, new: "<<*pad_set[k]->node<<" "<<*new_pad<<endl;
 				pad_set[k]->node->disableX();
 				pad_set[k]->node->value = 0;
 				pad_set[k]->node = new_pad;
@@ -1419,6 +1348,13 @@ void Circuit::extract_min_max_pads(vector<double> ref_drop_vec){
 		}
 
 	}
+	//for(size_t j=0;j<min_pads.size();j++){
+		//clog<<"min_pads: "<<*min_pads[j]<<endl;
+	//}
+	//for(size_t j=0;j<max_pads.size();j++){
+		//clog<<"max_pads: "<<*max_pads[j]<<endl;
+	//}
+
 	min_pads.clear();
 	max_pads.clear();
 }
@@ -1449,26 +1385,19 @@ void Circuit::update_pad_control_nodes(vector<double> & ref_drop_value, size_t i
 			pad_ptr->control_nodes[nd] = weight;
 			drop_vec.push_back(nd->value); 
 		}
-				// sort control_nodes in ascending order
 		sort(drop_vec.begin(), drop_vec.end(),
 			compare_values);
-		//if(pad_set[i]->node->name=="n0_350_50")
-			//for(size_t j=0;j<drop_vec.size();j++)
-				//clog<<"drop_vec: "<<drop_vec[j]<<endl;
-
+		//double middle_value = (VDD - drop_vec[0])*1.2+drop_vec[0];
+		//clog<<"drop_vec[0]: "<<drop_vec[0]<<" "<<drop_vec[drop_vec.size()-1]<<endl;
 		double middle_value = drop_vec[drop_vec.size()/2];
 		//if((VDD-middle_value) / max_IRdrop <=0.5)
 			ref_drop_value[i] = middle_value;
-		//else
-			//ref_drop_value[i] = drop_vec[drop_vec.size()-1];
-		
-		//if(pad_set[i]->node->name=="n0_350_50")
-			//clog<<"middle value: "<<middle_value<<endl; 
+		//clog<<"middle value: "<<middle_value<<endl;
 	}
 	drop_vec.clear();
 }
 
-void Circuit::update_queue(Node *nds, queue<Node*> &q, Node *nd, int &count, double &dist){
+/*void Circuit::update_queue(Node *nds, queue<Node*> &q, Node *nd, int &count, double &dist){
 	Net * net; Node *nbr;
 	Node *na, *nb;
 	for(int i=0;i<6;i++){
@@ -1494,7 +1423,7 @@ void Circuit::update_queue(Node *nds, queue<Node*> &q, Node *nd, int &count, dou
 			}
 		}
 	}
-}
+}*/
 
 void Circuit::assign_distance(Node *nds, Node *nd, double dist){
 	Node *ndt;
@@ -1514,114 +1443,6 @@ void Circuit::assign_distance(Node *nds, Node *nd, double dist){
 	}
 }
 
-// find weighted paths from source node nds to all nodes
-// in the region
-void Circuit::find_shortest_paths(Node *nds){
-	Node *nds_old;
-	Node *nds_new = NULL;
-	nds_old = nds;
-	nds_old->distance = 0;
-	nds_old->visit_flag = true;
-	nds_old->traverse_flag = true;
-	// stores all front end nodes
-	vector<Node*> front_nodes;
-	do{
-		nds_new = update_distance(nds_old, 
-			front_nodes);	
-		nds_old = nds_new;
-		//cout<<endl;
-	}while(nds_new !=NULL);
-}
-
-Node* Circuit::update_distance(Node *nd, vector<Node *> &front_nodes){
-	Net * net; Node *nbr;
-	Node *na, *nb;
-	for(int i=0;i<6;i++){
-		net = nd->nbr[i];
-		if(net==NULL) continue;
-		// find neighboring nodes
-		na = net->ab[0];
-		nb = net->ab[1];
-		if(nd->name == na->name)
-			nbr = nb;
-		else	nbr = na;
-		if(nbr->visit_flag == true) continue;
-		if(nbr->region_flag == false) continue;
-		if(!nbr->is_ground()&& !nbr->visit_flag)
-{
-			// assign initial weight
-			double distance = nd->distance 
-				+ net->value;
-			if(nbr->distance == -1 || 
-			   distance < nbr->distance){
-				//cout<<"nbr, distance, calc: "<<*nbr<<" "<<nbr->distance<<" "<<distance<<endl;
-				nbr->distance = distance;
-			}
-
-			// if node is not traversed yet	
-			if(!nbr->traverse_flag){
-				front_nodes.push_back(nbr);
-			}
-		}
-		nbr->traverse_flag = true;
-	}
-	// select the least distance node from 
-	// front_nodes
-	Node *nds_new = min_dist_front_node(front_nodes);
-	if(nds_new !=NULL){
-		//cout<<"new min dist node: "<<*nds_new<<endl;
-		nds_new->visit_flag = true;
-	}
-	return nds_new;
-}
-
-Node* Circuit::min_dist_front_node(vector<Node*> front_nodes){
-	Node *nd;
-	Node *min_dist_nd;
-	min_dist_nd = NULL;
-	double min_dist = -1.0;
-	for(size_t i=0;i<front_nodes.size();i++){
-		nd = front_nodes[i];
-		if(nd->visit_flag == true) continue;
-		//cout<<"front_node: "<<*nd<<" "<<nd->distance<<endl;
-		if(min_dist == -1.0){
-			min_dist = nd->distance;
-			min_dist_nd = nd;
-		}			
-		else{
-			if(nd->distance < min_dist){
-				min_dist = nd->distance;
-				min_dist_nd = nd;
-			}
-		}
-	}
-	return min_dist_nd;
-}
-
-void Circuit::print_distance(Node *nd){
-	cout<<endl<<"special node: "<<*nd<<endl;
-	for(size_t j=0;j<nodelist.size()-1;j++){
-		if(nodelist[j]->region_flag==true)
-			cout<<"nd, dist: "<<nodelist[j]->name<<" "<<nodelist[j]->distance<<endl;
-	}	
-}
-
-// map the shortest distance from node to pad
-void Circuit::map_min_dist_to_pad(Node *nds){
-	Pad *nd;
-	Node *ndt;
-	pair<Node*, double> pad_pair;
-	//cout<<"nds: "<<*nds<<endl;
-	for(size_t i=0;i<pad_set.size();i++){
-		nd = pad_set[i];
-		ndt = nd->node;
-		if(!ndt->region_flag) continue;
-		//cout<<"pad belongs to region: "<<*ndt<<endl;
-		pad_pair.first = nds;
-		pad_pair.second = ndt->distance;
-		nd->control_nodes.insert(pad_pair);
-	}	
-}
 
 void Circuit::print_pad_map(){
 	Pad *nd;
@@ -1647,13 +1468,14 @@ void Circuit::print_pad_map(){
 }
 
 void Circuit::clear_flags(){
-	Node *nd;
-	for(size_t i=0;i<nodelist.size()-1;i++){
-		nd = nodelist[i];
-		nd->region_flag = false;
-		nd->traverse_flag = false;
-		nd->visit_flag = false;
-		nd->distance = -1;	
+	Pad *pad;
+	for(size_t i=0;i<pad_set.size();i++){
+		pad = pad_set[i];
+		pad->visit_flag = false;
+		pad->fix_flag = false;
+		//nd->region_flag = false;
+		//nd->fix_flag = false;
+		//nd->visit_flag = false;
 	}
 }
 
@@ -1676,35 +1498,93 @@ void Circuit::relocate_pads(){
 	// build up the map for nodes in PAD layer
 	build_map_node_pt();
 
+	mark_special_nodes();
+
 	vector<double> ref_drop_vec;
 	//print_pad_set();
-	for(size_t i=0;i<6;i++){
+	for(size_t i=0;i<1;i++){
 		int pad_number = 1;
 		origin_pad_set.resize(pad_set.size());
 		assign_pad_set(origin_pad_set);
-		//clog<<"i, pad set size: "<<i<<" "<<pad_set.size()<<endl;
+		
+		// find control nodes for each pad
 		extract_pads(pad_number);
+		// find the tune spot for control nodes	
 		update_pad_control_nodes(ref_drop_vec, i);
-			
+		// find new point for all pads	
 		dist = update_pad_pos_all(ref_drop_vec);
-		//if(i==0)
+		// move the low 10% pads into high 10% 
+		// pad area 
+		if(i==0)
 			extract_min_max_pads(ref_drop_vec);
+		// update the old pad set value
 		assign_pad_set(pad_set_old);
+		// actual move pads into the new spots
 		project_pads();
-
-		//print_pad_set();
-		//dist = update_pad_pos();
-		//clog<<"finish first update pad pos. "<<endl;
-		//project_pads();
-		//clog<<"finish first project pads. "<<endl;
 
 		rebuild_voltage_nets();
 		solve_LU_core();
-
 		double max_IR = locate_maxIRdrop();	
-		double max_IRS = locate_special_maxIRdrop();
+		//double max_IRS = locate_special_maxIRdrop();
 		clog<<"max_IR is: "<<max_IR<<endl;
-		clog<<"max_IRS is: "<<max_IRS<<endl<<endl;
+		//clog<<"max_IRS is: "<<max_IRS<<endl<<endl;
+	}
+	ref_drop_vec.clear();
+	map_node_pt.clear();
+	//print_pad_set();
+}
+
+void Circuit::relocate_pads_graph(){
+	vector<Node*> pad_set_old;
+	double dist = 0;
+	double new_dist = 0;
+	pad_set_old.resize(pad_set.size());
+	assign_pad_set(pad_set_old);
+	// store a original copy of the pad set
+	
+	// build up the map for nodes in PAD layer
+	build_map_node_pt();
+	mark_special_nodes();
+
+	vector<double> ref_drop_vec;
+	//print_pad_set();
+	for(size_t i=0;i<11;i++){
+		int pad_number = 1;
+		origin_pad_set.resize(pad_set.size());
+		assign_pad_set(origin_pad_set);
+		
+		// build pad connection graph
+		build_graph();
+		// find control nodes for each pad
+		extract_pads(pad_number);
+		// find the tune spot for control nodes	
+		update_pad_control_nodes(ref_drop_vec, i);
+		
+		//for(size_t i=0;i<ref_drop_vec.size();i++)
+			//clog<<i<<"ref_drop: "<<ref_drop_vec[i]<<endl;
+		// find new point for all pads	
+		dist = update_pad_pos_all(ref_drop_vec);
+		// move the low 10% pads into high 10% 
+		// pad area 
+		if(i==0)
+			extract_min_max_pads(ref_drop_vec);
+		// update the old pad set value
+		assign_pad_set(pad_set_old);
+
+		// move pads according to graph contraints
+		//for(size_t i=0;i<ref_drop_vec.size();i++)
+			//clog<<i<<" "<<ref_drop_vec[i]<<endl;
+		graph_move_pads(ref_drop_vec);
+		clear_flags();
+		// actual move pads into the new spots
+		// project_pads();
+
+		rebuild_voltage_nets();
+		solve_LU_core();
+		double max_IR = locate_maxIRdrop();	
+		//double max_IRS = locate_special_maxIRdrop();
+		clog<<"max_IR is: "<<max_IR<<endl;
+		//clog<<"max_IRS is: "<<max_IRS<<endl<<endl;
 	}
 	ref_drop_vec.clear();
 	map_node_pt.clear();
@@ -1753,23 +1633,43 @@ double Circuit::update_pad_pos(double ref_drop_value, size_t i){
 		pad_ptr = pad_set[i];
 		pad = pad_ptr->node;
 		//cout<<endl<<"i, pad_node: "<<i<<" "<<*pad<<endl;
+		double max_drop, min_drop;
+		max_drop = 0;
+		min_drop = -1;
 		for(it = pad_ptr->control_nodes.begin();
 		    it != pad_ptr->control_nodes.end();
 		    it++){
 			if(it->second > ref_drop_value)
 				continue;
-			if((pad->name == "n0_15_20" || 
-			pad->name == "n0_11_78")){
-			//cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
+		 	  if(it->second > max_drop)
+				max_drop = it->second;
+			  if(min_drop == -1)
+				min_drop = it->second;
+			  else if(it->second < min_drop)
+				min_drop = it->second;
+
+			if((pad->name == "n0_67_148" || 
+			pad->name == "n0_135_104" ||
+			pad->name == "n0_125_449" ||
+			pad->name == "n0_400_296")){
+			
+			  			//cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
 			printf("%ld %ld  %.5e\n", it->first->pt.y+1, it->first->pt.x+1, it->first->value);
 			
-		}
+			}
 			nd = it->first;
 			weight = 1.0/it->second;
 			weighted_x += weight * nd->pt.x;
 			weighted_y += weight * nd->pt.y;
 			sum_weight += weight; 	
 		}
+		
+		//if((pad->name == "n0_67_148" || 
+			//pad->name == "n0_135_104"||
+			//pad->name == "n0_125_449"||
+			//pad->name == "n0_400_296")){
+			//clog<<"pad, max, min, diff: "<<*pad<<" "<<VDD - min_drop<<" "<<VDD - max_drop<<max_drop - min_drop<<endl;
+		//}
 		if(sum_weight !=0){
 			pad_newx = weighted_x / sum_weight;
 			pad_newy = weighted_y / sum_weight;
@@ -1808,7 +1708,7 @@ void Circuit::project_pads(){
 		// pad_newy)
 		
 		new_pad = pad_projection(pad_ptr, pad);
-		if(pad->name == "n0_15_20" ||
+		if(pad->name == "n0_67_148" ||
 			//pad->name == "n0_50_150"||
 			pad->name == "n0_11_78")
 			clog<<"old pad / new pad: "<<*pad<<" "<<*new_pad<<endl;
@@ -2021,4 +1921,153 @@ void Circuit::print_matlab(){
 			count += 1;
 	}
 	clog<<"VDD # is: "<<count<<endl;
+}
+
+// build graph for pad nodes
+void Circuit::build_graph(){
+	Pad *pad;
+	Pad *pad_nbr;
+	Node *nd;
+	bool flag_pad = false;
+	bool flag_nbr = false;
+	// clear content
+	for(size_t i=0;i<pad_set.size();i++){
+		pad_set[i]->nbrs.clear();
+	}
+	// find nbr pad nodes
+	for(size_t i=0;i<pad_set.size();i++){
+		//clog<<"pad: "<<*pad->node<<endl;
+		flag_pad = false;
+		flag_nbr = false;
+		pad = pad_set[i];
+		pad_nbr = find_nbr_pad(pad);
+		for(size_t j=0;j<pad_nbr->nbrs.size();j++){
+			if(pad_nbr->nbrs[j]->node->name== pad->node->name)
+				flag_pad = true;
+				break;
+		}
+		for(size_t j=0;j<pad->nbrs.size();j++){
+			if(pad->nbrs[j]->node->name== pad_nbr->node->name)
+				flag_nbr = true;
+				break;
+		}
+		if(flag_pad == false){
+			pad->nbrs.push_back(pad_nbr);
+		}
+		if(flag_nbr == false)
+			pad_nbr->nbrs.push_back(pad);
+	}
+	/*for(size_t i=0;i<pad_set.size();i++){
+		Pad *pad = pad_set[i];
+		clog<<"pad: "<<*pad->node<<endl;
+		for(size_t j=0;j<pad->nbrs.size();j++){
+			clog<<"nbr: "<<*pad->nbrs[j]->node<<endl;
+		}
+	}*/
+}
+
+// use Euclidiean distance to locate nearest nbr pad
+Pad * Circuit::find_nbr_pad(Pad *pad){
+	Pad * nbr;
+	double distance=-1;
+	double min_dist=0;
+	bool flag = false;
+	size_t min_index=0;
+	for(size_t i=0;i<pad_set.size();i++){
+		nbr = pad_set[i];
+		if(nbr->node->name == pad->node->name)
+			continue;
+		distance = get_distance(nbr->node, pad->node);
+		if(flag == false){
+			flag = true;
+			min_dist = distance;
+			min_index = i;
+		}else{
+			if(distance < min_dist){
+				min_dist = distance;	
+				min_index = i;
+			}	
+		}
+	}
+	return pad_set[min_index];
+}
+
+double Circuit::get_distance(Node *na, Node *nb){
+	double distance = 0;
+	double delta_x = 0;
+	double delta_y = 0;
+	delta_x=(na->pt.x-nb->pt.x);
+	delta_y=(na->pt.y-nb->pt.y);
+	delta_x *= delta_x;
+	delta_y *= delta_y;
+	distance = sqrt(delta_x + delta_y);
+	return distance;
+}
+
+void Circuit::graph_move_pads(vector<double> ref_drop_vec){
+	Node *new_pad;
+	int id=0;
+	do{
+		id = locate_max_drop_pad(ref_drop_vec);
+		if(id==-1) break;
+		Pad *pad_ptr = pad_set[id];
+		Pad *pad_nbr = NULL;
+		Node *pad = pad_ptr->node;
+		//clog<<endl<<"pad: "<<*pad<<endl;
+		new_pad = pad_projection(pad_ptr, pad);
+		if(pad->name == "n0_67_148" ||
+			//pad->name == "n0_50_150"||
+			pad->name == "n0_11_78")
+			clog<<"old pad / new pad: "<<*pad<<" "<<*new_pad<<endl;
+
+		//clog<<"new_pad: "<<*new_pad<<endl;
+		pad_ptr->visit_flag = true;
+		for(size_t i=0;i<pad_ptr->nbrs.size();i++){
+			pad_nbr = pad_ptr->nbrs[i];
+			if(pad_nbr->fix_flag == false){
+				pad_nbr->fix_flag = true;
+				//clog<<"pad_nbr: "<<*pad_nbr->node<<endl;
+			}
+		}
+
+		pad_ptr->node = new_pad;
+		pad_ptr->control_nodes.clear();
+	}while(id != -1);
+}
+
+// locate id that has minimum value and not visited or fixed 
+int Circuit::locate_max_drop_pad(vector<double> vec){
+	int min_id = -1;
+	double min_ref = 0;
+	bool flag = false;
+	for(size_t i=0;i<vec.size();i++){
+		if(pad_set[i]->visit_flag == true ||
+			pad_set[i]->fix_flag ==  true)
+			continue;
+		//clog<<"i, vec: "<<i<<" "<<vec[i]<<endl;
+		if(flag == false){
+			flag = true;
+			min_ref = vec[i];
+			min_id = i;
+		}
+		else if(vec[i] < min_ref){
+			min_ref = vec[i];
+			min_id = i;
+		}
+	}
+	/*double max_id=-1;
+	double max_ref = 0;
+	for(size_t i=0;i<vec.size();i++){
+		if(pad_set[i]->visit_flag == true ||
+			pad_set[i]->fix_flag ==  true)
+			continue;
+		//clog<<"i, vec: "<<i<<" "<<vec[i]<<endl;
+		if(vec[i] > max_ref){
+			max_ref = vec[i];
+			max_id = i;
+		}
+	}*/
+	//clog<<"min_ref, min_pad: "<<min_ref<<" "<<*pad_set[min_id]->node<<endl;
+	return min_id;
+	//return max_id;
 }

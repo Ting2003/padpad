@@ -5,8 +5,6 @@ using namespace std;
 
 // empty constructor
 Node::Node():name(""),pt(Point(-1,-1,-1)), rid(0),
-	visit_flag(false), region_flag(false), 
-	traverse_flag(false), distance(-1.0),
 	value(0.0), flag(false), rep(NULL){
 	for(int i=0;i<6;i++) this->nbr[i] = NULL;
 	for(int i=0;i<4;i++){
@@ -17,8 +15,6 @@ Node::Node():name(""),pt(Point(-1,-1,-1)), rid(0),
 
 Node::Node(string n, Point _pt, bool x, double v): 
 	name(n), pt(_pt), rid(0),
-	visit_flag(false), region_flag(false), 
-	traverse_flag(false), distance(-1.0), 
 	value(v), flag(x), rep(NULL) {
 	for(int i=0;i<6;i++) this->nbr[i] = NULL;
 	for(int i=0;i<4;i++){
@@ -31,10 +27,6 @@ Node::Node(const Node & nd){
 	name = nd.name;
 	pt = nd.pt;
 	rid = nd.rid;
-	visit_flag = nd.visit_flag;
-	region_flag = nd.region_flag;
-	traverse_flag = nd.traverse_flag;
-	distance = nd.distance;
 	value = nd.value;
 	flag = nd.flag;
 	rep = nd.rep;
