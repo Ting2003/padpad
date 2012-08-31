@@ -1633,20 +1633,20 @@ double Circuit::update_pad_pos(double ref_drop_value, size_t i){
 		pad_ptr = pad_set[i];
 		pad = pad_ptr->node;
 		//cout<<endl<<"i, pad_node: "<<i<<" "<<*pad<<endl;
-		double max_drop, min_drop;
-		max_drop = 0;
-		min_drop = -1;
+		//double max_drop, min_drop;
+		//max_drop = 0;
+		//min_drop = -1;
 		for(it = pad_ptr->control_nodes.begin();
 		    it != pad_ptr->control_nodes.end();
 		    it++){
 			if(it->second > ref_drop_value)
 				continue;
-		 	  if(it->second > max_drop)
+		 	  /*if(it->second > max_drop)
 				max_drop = it->second;
 			  if(min_drop == -1)
 				min_drop = it->second;
 			  else if(it->second < min_drop)
-				min_drop = it->second;
+				min_drop = it->second;*/
 
 			if((pad->name == "n0_67_148" || 
 			pad->name == "n0_135_104" ||
