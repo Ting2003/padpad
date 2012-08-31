@@ -1365,7 +1365,7 @@ void Circuit::update_pad_control_nodes(vector<double> & ref_drop_value, size_t i
 	for(size_t i=0;i<pad_set.size();i++){
 		if(pad_set[i]->control_nodes.size()==0)
 			continue;
-		double middle_value = locate_ref(i);
+		double middle_value = locate_ref(i, 2);
 		ref_drop_value[i] = middle_value;
 		//clog<<"middle value: "<<middle_value<<endl;
 	}
@@ -2099,7 +2099,7 @@ int Circuit::locate_max_drop_pad(vector<double> vec){
 }
 
 // locate the tune spot for the control nodes.
-double Circuit::locate_ref(size_t i){
+double Circuit::locate_ref(size_t i, double ratio){
 	Pad *pad_ptr;
 	Node *pad;
 	map<Node*, double>::iterator it;
@@ -2122,7 +2122,7 @@ double Circuit::locate_ref(size_t i){
 	}
 	sort(drop_vec.begin(), drop_vec.end(),
 			compare_values);
-	double middle_value = drop_vec[drop_vec.size()/2];
+	double middle_value = drop_vec[drop_vec.size()/ratio];
 	drop_vec.clear();
 	return middle_value;
 }
