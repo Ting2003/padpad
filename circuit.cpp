@@ -1361,40 +1361,14 @@ void Circuit::extract_min_max_pads(vector<double> ref_drop_vec){
 
 // tune 50% nodes with the small IR drops
 void Circuit::update_pad_control_nodes(vector<double> & ref_drop_value, size_t iter){
-	Pad *pad_ptr;
-	Node *pad;
-	map<Node*, double>::iterator it;
-	Node *nd;
-	double weight=0;
-	vector<double> drop_vec;
 	ref_drop_value.resize(pad_set.size());
 	for(size_t i=0;i<pad_set.size();i++){
 		if(pad_set[i]->control_nodes.size()==0)
 			continue;
-		pad_ptr = pad_set[i];
-		pad = pad_ptr->node;
-		drop_vec.clear();
-		for(it = pad_ptr->control_nodes.begin();
-		    it != pad_ptr->control_nodes.end();
-		    it++){
-			nd = it->first;
-			weight = nd->value;
-			if(weight <0)
-				weight *=10;
-
-			pad_ptr->control_nodes[nd] = weight;
-			drop_vec.push_back(nd->value); 
-		}
-		sort(drop_vec.begin(), drop_vec.end(),
-			compare_values);
-		//double middle_value = (VDD - drop_vec[0])*1.2+drop_vec[0];
-		//clog<<"drop_vec[0]: "<<drop_vec[0]<<" "<<drop_vec[drop_vec.size()-1]<<endl;
-		double middle_value = drop_vec[drop_vec.size()/2];
-		//if((VDD-middle_value) / max_IRdrop <=0.5)
-			ref_drop_value[i] = middle_value;
+		double middle_value = locate_ref(i);
+		ref_drop_value[i] = middle_value;
 		//clog<<"middle value: "<<middle_value<<endl;
 	}
-	drop_vec.clear();
 }
 
 /*void Circuit::update_queue(Node *nds, queue<Node*> &q, Node *nd, int &count, double &dist){
@@ -1633,22 +1607,23 @@ double Circuit::calc_avg_ref(vector<double> ref_drop_vec){
 	}
 	double avg_drop = sum_diff / count;
 	//cout<<"avg_drop is: "<<avg_drop<<endl; 
-	/*cout<<endl;
+	cout<<endl;
 	for(size_t i=0;i<pad_set.size();i++){
 		if(pad_set[i]->control_nodes.size()==0)
 			continue;
 		Node *pad = pad_set[i]->node;
-		if((pad->name == "n0_67_148" || 
+		/*if((pad->name == "n0_67_148" || 
 			pad->name == "n0_135_104" ||
 			pad->name == "n0_125_449" ||
 			pad->name == "n0_400_296" ||
 			pad->name == "n0_324_35" ||
 			pad->name == "n0_365_114" ||
-			pad->name == "n0_162_159")){
-
-		cout<<"avg, data, pad: "<<avg_drop<<" "<<data[i]<<" "<<*pad_set[i]->node<<endl;
+			pad->name == "n0_162_159")){*/
+		if(data[i]>=2*avg_drop){
+			cout<<"avg, data, pad: "<<avg_drop<<" "<<data[i]<<" "<<*pad_set[i]->node<<endl;
+			//double middle_value = drop_vec[drop_vec.size()/2];
 		}
-	}*/
+	}
 }
 
 double Circuit::update_pad_pos_all(vector<double> ref_drop_vec){
@@ -2121,4 +2096,33 @@ int Circuit::locate_max_drop_pad(vector<double> vec){
 	//clog<<"min_ref, min_pad: "<<min_ref<<" "<<*pad_set[min_id]->node<<endl;
 	return min_id;
 	//return max_id;
+}
+
+// locate the tune spot for the control nodes.
+double Circuit::locate_ref(size_t i){
+	Pad *pad_ptr;
+	Node *pad;
+	map<Node*, double>::iterator it;
+	Node *nd;
+	double weight = 0;
+	vector<double> drop_vec;
+	pad_ptr = pad_set[i];
+	pad = pad_ptr->node;
+	drop_vec.clear();
+	for(it = pad_ptr->control_nodes.begin();
+			it != pad_ptr->control_nodes.end();
+			it++){
+		nd = it->first;
+		weight = nd->value;
+		if(weight <0)
+			weight *=10;
+
+		pad_ptr->control_nodes[nd] = weight;
+		drop_vec.push_back(nd->value); 
+	}
+	sort(drop_vec.begin(), drop_vec.end(),
+			compare_values);
+	double middle_value = drop_vec[drop_vec.size()/2];
+	drop_vec.clear();
+	return middle_value;
 }
