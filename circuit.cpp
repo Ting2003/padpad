@@ -1591,7 +1591,68 @@ void Circuit::relocate_pads_graph(){
 	print_pad_set();
 }
 
+double Circuit::calc_avg_ref(vector<double> ref_drop_vec){
+	Node *pad;
+	Pad *pad_ptr;
+	double max_drop, min_drop;
+	double sum_max = 0;
+	double sum_min = 0;
+	double sum_diff = 0;
+	size_t count = 0;
+	double ref_drop_value = 0;
+	double std_dev = 0;
+	vector<double> data;
+	data.resize(pad_set.size());
+
+	for(size_t i=0;i<pad_set.size();i++){
+		if(pad_set[i]->control_nodes.size()==0)
+			continue;
+
+		count ++;	
+		ref_drop_value = ref_drop_vec[i];
+		map<Node *, double>::iterator it;
+		pad_ptr = pad_set[i];
+		pad = pad_ptr->node;
+		max_drop = 0;
+		min_drop = -1;
+		
+		for(it = pad_ptr->control_nodes.begin();
+		    it != pad_ptr->control_nodes.end();
+		    it++){
+			if(it->second > ref_drop_value)
+				continue;
+			  if(it->second > max_drop)
+				max_drop = it->second;
+			  if(min_drop == -1)
+				min_drop = it->second;
+			  else if(it->second < min_drop)
+				min_drop = it->second;
+		}
+		data[i] = max_drop - min_drop;
+		sum_diff += data[i];
+	}
+	double avg_drop = sum_diff / count;
+	//cout<<"avg_drop is: "<<avg_drop<<endl; 
+	/*cout<<endl;
+	for(size_t i=0;i<pad_set.size();i++){
+		if(pad_set[i]->control_nodes.size()==0)
+			continue;
+		Node *pad = pad_set[i]->node;
+		if((pad->name == "n0_67_148" || 
+			pad->name == "n0_135_104" ||
+			pad->name == "n0_125_449" ||
+			pad->name == "n0_400_296" ||
+			pad->name == "n0_324_35" ||
+			pad->name == "n0_365_114" ||
+			pad->name == "n0_162_159")){
+
+		cout<<"avg, data, pad: "<<avg_drop<<" "<<data[i]<<" "<<*pad_set[i]->node<<endl;
+		}
+	}*/
+}
+
 double Circuit::update_pad_pos_all(vector<double> ref_drop_vec){
+	calc_avg_ref(ref_drop_vec);	
 	double total_dist = 0;
 	double dist = 0;
 	for(size_t i=0;i<pad_set.size();i++){
@@ -1629,34 +1690,24 @@ double Circuit::update_pad_pos(double ref_drop_value, size_t i){
 		double sum_weight = 0;
 		double weighted_x =0;
 		double weighted_y =0;
-		size_t count = 0;
 		pad_ptr = pad_set[i];
 		pad = pad_ptr->node;
 		//cout<<endl<<"i, pad_node: "<<i<<" "<<*pad<<endl;
-		//double max_drop, min_drop;
-		//max_drop = 0;
-		//min_drop = -1;
 		for(it = pad_ptr->control_nodes.begin();
 		    it != pad_ptr->control_nodes.end();
 		    it++){
 			if(it->second > ref_drop_value)
 				continue;
-		 	  /*if(it->second > max_drop)
-				max_drop = it->second;
-			  if(min_drop == -1)
-				min_drop = it->second;
-			  else if(it->second < min_drop)
-				min_drop = it->second;*/
-
-			if((pad->name == "n0_67_148" || 
+		 	  
+			/*if((pad->name == "n0_67_148" || 
 			pad->name == "n0_135_104" ||
 			pad->name == "n0_125_449" ||
 			pad->name == "n0_400_296")){
 			
-			  			//cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
+			  //cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
 			printf("%ld %ld  %.5e\n", it->first->pt.y+1, it->first->pt.x+1, it->first->value);
 			
-			}
+			}*/
 			nd = it->first;
 			weight = 1.0/it->second;
 			weighted_x += weight * nd->pt.x;

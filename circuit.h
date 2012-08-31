@@ -130,6 +130,7 @@ public:
 	double get_distance(Node *na, Node *nb);
 	void graph_move_pads(vector<double> ref_drop_vec);
 	int locate_max_drop_pad(vector<double> vec);
+	double calc_avg_ref(vector<double> ref_drop_vec);
 	//////// end functions for pad ////////
 
 	// C style output
