@@ -28,6 +28,7 @@ public:
 	bool visit_flag;
 	bool fix_flag;
 	double data; // stores the maximum diff
-	size_t ratio;
+	double ratio;
+	bool violate_flag;
 };
 #endif

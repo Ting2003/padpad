@@ -14,6 +14,7 @@ Pad::Pad(): node(NULL){
 	fix_flag = false;
 	data = 0;
 	ratio = 0;
+	violate_flag = false;
 }
 
 Pad::~Pad(){
