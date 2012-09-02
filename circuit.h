@@ -125,12 +125,15 @@ public:
 	void clear_pad_control_nodes();
 	void update_pad_control_nodes(vector<double> & ref_drop_vec, size_t iter);
 	void extract_min_max_pads(vector<double> ref_drop_vec);
+	void extract_min_max_pads_new(vector<double> ref_drop_vec);
+
 	void build_graph();
 	Pad *find_nbr_pad(Pad *pad);
 	double get_distance(Node *na, Node *nb);
 	void graph_move_pads(vector<double> ref_drop_vec);
 	int locate_max_drop_pad(vector<double> vec);
-	double calc_avg_ref(vector<double> &ref_drop_vec);
+	double calc_avg_ref_drop(vector<double> &ref_drop_vec);
+	double calc_avg_ref(vector<double> ref_drop_vec);
 	double locate_ref(size_t i);
 	void dynamic_update_violate_ref(vector<double> & ref_drop_vec);
 	bool print_flag(Node *nd);
