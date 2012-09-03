@@ -34,10 +34,10 @@ using namespace std;
 
 double Circuit::EPSILON = 1e-5;
 size_t Circuit::MAX_BLOCK_NODES =5500;
-double Circuit::OMEGA = 1.2;
-double Circuit::OVERLAP_RATIO = 0;//0.2;
+double Circuit::OMEGA = 1.0;//1.2;
+double Circuit::OVERLAP_RATIO = 0.2;
 int    Circuit::MODE = 0;
-const int MAX_ITERATION = 1;//1000;//1000000;//1000;
+const int MAX_ITERATION = 1000;//1000000;//1000;
 const int SAMPLE_INTERVAL = 5;
 const size_t SAMPLE_NUM_NODE = 10;
 const double MERGE_RATIO = 0.3;
@@ -275,8 +275,8 @@ void Circuit::partition_circuit(){
 		if( X_BLOCKS * Y_BLOCKS < num_blocks ) Y_BLOCKS+=1; 
 		num_blocks = X_BLOCKS * Y_BLOCKS;
 	}
-	X_BLOCKS =2;
-	Y_BLOCKS =1;
+	//X_BLOCKS =2;
+	//Y_BLOCKS =1;
 	clog<<"num_blocks: "<<X_BLOCKS<<" / "<<Y_BLOCKS <<endl;
 	block_info.X_BLOCKS = X_BLOCKS;
 	block_info.Y_BLOCKS = Y_BLOCKS;
@@ -404,9 +404,10 @@ void Circuit::find_block_size(){
 }
 
 void Circuit::solve(){
-	//if( MODE == 0 )
-	//	solve_IT();
-	//else
+	// solve_init();
+	/*if( MODE == 0 )
+		solve_IT();
+	else*/
 		solve_LU();
 }
 
@@ -415,15 +416,15 @@ bool Circuit::solve_IT(){
 	// did not find any `X' node
 	if( circuit_type == UNKNOWN )
 		circuit_type = C4;
-	solve_init();
+	//solve_init();
 
-	/*if( replist.size() <= 2*MAX_BLOCK_NODES ){
+	if( replist.size() <= 2*MAX_BLOCK_NODES ){
 		clog<<"Replist is small, use direct LU instead."<<endl;
 		solve_LU_core();
 		return true;
 	}
-	*/
-	select_omega();
+	
+	//select_omega();
 	partition_circuit();
 
 	// Only one block, use direct LU instead
@@ -573,7 +574,7 @@ void Circuit::solve_LU_core(){
 
 // solve the node voltages using direct LU
 void Circuit::solve_LU(){
-	solve_init();
+	//solve_init();
 	solve_LU_core();
 }
 
@@ -1647,7 +1648,7 @@ void Circuit::relocate_pads_graph(){
 
 	vector<double> ref_drop_vec;
 	//print_pad_set();
-	for(size_t i=0;i<13;i++){
+	for(size_t i=0;i<12;i++){
 		int pad_number = 1;
 		origin_pad_set.resize(pad_set.size());
 		assign_pad_set(origin_pad_set);
@@ -1659,11 +1660,7 @@ void Circuit::relocate_pads_graph(){
 		// find the tune spot for control nodes	
 		update_pad_control_nodes(ref_drop_vec, i);	
 		if(i>=6)
-		{
 			dynamic_update_violate_ref(ref_drop_vec);
-		}
-		//if(i<=2)	
-		//extract_min_max_pads_new(ref_drop_vec);	
 		// find new point for all pads	
 		dist = update_pad_pos_all(ref_drop_vec);	
 		// move the low 10% pads into high 10% 
@@ -1686,7 +1683,8 @@ void Circuit::relocate_pads_graph(){
 		// project_pads();
 
 		rebuild_voltage_nets();
-		solve_LU_core();
+		solve();
+		//solve_LU_core();
 		double max_IR = locate_maxIRdrop();	
 		//double max_IRS = locate_special_maxIRdrop();
 		clog<<"i, max_IR is: "<<i<<" "<<max_IR<<endl;

@@ -100,6 +100,7 @@ int main(int argc, char * argv[]){
 		Circuit * ckt = cktlist[i];
 		if(ckt->get_name()=="VDD"){
 			clog<<"Solving "<<ckt->get_name()<<endl;
+			ckt->solve_init();
 			ckt->solve();
 			double max_IRdrop = ckt->locate_maxIRdrop();
 			
