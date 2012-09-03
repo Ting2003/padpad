@@ -138,6 +138,7 @@ public:
 	void dynamic_update_violate_ref(vector<double> & ref_drop_vec);
 	bool print_flag(Node *nd);
 	void move_violate_pads(vector<double> ref_drop_vec);
+	void modify_newxy();
 	//////// end functions for pad ////////
 
 	// C style output

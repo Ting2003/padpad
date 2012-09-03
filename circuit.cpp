@@ -1296,6 +1296,8 @@ void Circuit::extract_min_max_pads_new(vector<double> ref_drop_vec){
 	vector<Node*> min_pads;
 	vector<Node*> max_pads;
 	vector<bool >temp_flag;
+
+	map<Node *, double>::iterator it;
 	temp_flag.resize(pad_set.size());
 	for(size_t i=0;i<temp_flag.size();i++)
 		temp_flag[i] = false;
@@ -1344,15 +1346,14 @@ void Circuit::extract_min_max_pads_new(vector<double> ref_drop_vec){
 
 	// set nd into the weighted center
 	// start to map min pads into max pads locations
-	for(size_t j=0;j<min_pads.size();j++){
+	for(size_t j=0;j<min_pads.size();j=j+2){
 		for(size_t k=0;k<pad_set.size();k++){
 			if(pad_set[k]->node->name == 
 				min_pads[j]->name){
 				id_minpad = k;
 			}
 		}
-
-		//clog<<"min_pads, id: "<<*min_pads[j]<<" "<<id_minpad<<" "<<endl;
+	
 		size_t i = j % max_pads.size();
 		//size_t i = locate_max_pad(max_pads, iter);
 		Node * nd = max_pads[i];
@@ -1412,13 +1413,10 @@ void Circuit::extract_min_max_pads(vector<double> ref_drop_vec){
 			min_index=j;
 		}
 	}
-	clog<<"min, max: "<<min<<" "<<max<<endl;
 	for(size_t j=0;j<ref_drop_vec.size();j++){
 		if(VDD - ref_drop_vec[j]<= max*0.5){
 			min_pads.push_back(pad_set[j]->node);
 		}
-	//}
-	//for(size_t j=0;j<ref_drop_vec.size();j++){
 		if(VDD-ref_drop_vec[j]>=max*0.8){
 			max_pads.push_back(pad_set[j]->node);
 		}
@@ -1587,7 +1585,7 @@ void Circuit::clear_pad_control_nodes(){
 	}
 }
 
-void Circuit::relocate_pads(){
+/*void Circuit::relocate_pads(){
 	vector<Node*> pad_set_old;
 	double dist = 0;
 	double new_dist = 0;
@@ -1632,8 +1630,8 @@ void Circuit::relocate_pads(){
 	}
 	ref_drop_vec.clear();
 	map_node_pt.clear();
-	//print_pad_set();
-}
+	print_pad_set();
+}*/
 
 void Circuit::relocate_pads_graph(){
 	vector<Node*> pad_set_old;
@@ -1649,7 +1647,7 @@ void Circuit::relocate_pads_graph(){
 
 	vector<double> ref_drop_vec;
 	//print_pad_set();
-	for(size_t i=0;i<10;i++){
+	for(size_t i=0;i<13;i++){
 		int pad_number = 1;
 		origin_pad_set.resize(pad_set.size());
 		assign_pad_set(origin_pad_set);
@@ -1660,14 +1658,14 @@ void Circuit::relocate_pads_graph(){
 		extract_pads(pad_number);
 		// find the tune spot for control nodes	
 		update_pad_control_nodes(ref_drop_vec, i);	
-		if(i>=5)
+		if(i>=6)
 		{
 			dynamic_update_violate_ref(ref_drop_vec);
 		}
 		//if(i<=2)	
 		//extract_min_max_pads_new(ref_drop_vec);	
 		// find new point for all pads	
-		dist = update_pad_pos_all(ref_drop_vec);
+		dist = update_pad_pos_all(ref_drop_vec);	
 		// move the low 10% pads into high 10% 
 		// pad area 
 		if(i==0)
@@ -1677,6 +1675,9 @@ void Circuit::relocate_pads_graph(){
 		
 		move_violate_pads(ref_drop_vec);	
 		
+		// actual move pads into the new spots
+		//project_pads();
+
 		// move pads according to graph contraints
 		graph_move_pads(ref_drop_vec);	
 		
@@ -1757,7 +1758,6 @@ double Circuit::calc_avg_ref(vector<double> ref_drop_vec){
 }
 
 double Circuit::update_pad_pos_all(vector<double> ref_drop_vec){
-	//calc_avg_ref(ref_drop_vec);	
 	double total_dist = 0;
 	double dist = 0;
 	for(size_t i=0;i<pad_set.size();i++){
@@ -1772,6 +1772,28 @@ double Circuit::update_pad_pos_all(vector<double> ref_drop_vec){
 	return total_dist;
 }
 
+void Circuit::modify_newxy(){
+	Pad *pad;
+	Node *nd;
+	double delta_x;
+	double delta_y;
+	for(size_t i=0;i<pad_set.size();i++){
+		pad = pad_set[i];
+		nd = pad->node;
+		if(pad->newx == nd->pt.x &&
+		   pad->newy == nd->pt.y) 
+			continue;
+		delta_x = pad->newx - nd->pt.x;
+		delta_y = pad->newy - nd->pt.y;
+		delta_x /=2;
+		delta_y /=2;
+		pad->newx += delta_x;
+		pad->newy += delta_y;
+		
+		round_data(pad->newx);
+		round_data(pad->newy);
+	}
+}
 // decide pad's new pos with the weights
 // need to be tuned
 double Circuit::update_pad_pos(double ref_drop_value, size_t i){
@@ -1796,26 +1818,21 @@ double Circuit::update_pad_pos(double ref_drop_value, size_t i){
 			if(it->second > ref_drop_value)
 				continue;
 		 	  
-			//if((pad_set[i]->node->name == "n0_477_17")){
+			if((pad_set[i]->node->name == "n0_30_74" ||
+			    pad_set[i]->node->name == "n0_135_104"||
+			    pad_set[i]->node->name == "n0_255_59")){
+				//clog<<"data: "<<pad_set[i]->data<<endl;
 			  //cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
-			// printf("%ld %ld  %.5e\n", it->first->pt.y+1, it->first->pt.x+1, it->first->value);
+			 printf("%ld %ld  %.5e\n", it->first->pt.y+1, it->first->pt.x+1, it->first->value);
 			
-			//}
+			}
 			nd = it->first;
 			weight = 1.0/it->second;
 			weighted_x += weight * nd->pt.x;
 			weighted_y += weight * nd->pt.y;
 			sum_weight += weight; 	
 		}
-		if((pad_set[i]->node->name == "n0_477_17")){
-			  clog<<"wx, wy, sum_w: "<<weighted_x<<" "<<weighted_y<<" "<<sum_weight<<endl;
-			}
-		//if((pad->name == "n0_67_148" || 
-			//pad->name == "n0_135_104"||
-			//pad->name == "n0_125_449"||
-			//pad->name == "n0_400_296")){
-			//clog<<"pad, max, min, diff: "<<*pad<<" "<<VDD - min_drop<<" "<<VDD - max_drop<<max_drop - min_drop<<endl;
-		//}
+		
 		if(sum_weight !=0){
 			pad_newx = weighted_x / sum_weight;
 			pad_newy = weighted_y / sum_weight;
@@ -1825,8 +1842,20 @@ double Circuit::update_pad_pos(double ref_drop_value, size_t i){
 			round_data(pad_newx);
 			round_data(pad_newy);
 
-			pad_ptr->newx = pad_newx;
-			pad_ptr->newy = pad_newy;
+			/*if(pad->name == "n0_67_159")
+				clog<<"band pad, new: "<<*pad_ptr->node<<" "<<pad_newx<<" "<<pad_newy<<endl;*/
+
+			if((pad_ptr->node->pt.x > 300 || pad_ptr->node->pt.y > 150) && (pad_newx <= 300 && pad_newy <= 150)){
+				//clog<<"band pad, new: "<<*pad_ptr->node<<" "<<pad_newx<<" "<<pad_newy<<endl;
+				pad_ptr->control_nodes.clear();
+				pad_ptr->visit_flag = true;
+				
+			}else{
+				
+
+				pad_ptr->newx = pad_newx;
+				pad_ptr->newy = pad_newy;
+			}
 		}else{
 			pad_ptr->newx = pad->pt.x;
 			pad_ptr->newy = pad->pt.y;
@@ -2270,7 +2299,7 @@ void Circuit::dynamic_update_violate_ref(vector<double> & ref_drop_vec){
 		}
 	}
 	
-	//extract_min_max_pads_new(ref_drop_vec);	
+	extract_min_max_pads_new(ref_drop_vec);	
 }
 
 bool Circuit::print_flag(Node *pad){
