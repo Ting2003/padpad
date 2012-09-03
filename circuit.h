@@ -140,7 +140,12 @@ public:
 	void move_violate_pads(vector<double> ref_drop_vec);
 	void modify_newxy();
 	void resolve_direct();
-	void resolve_queue(vector<Pad *> pad_set_old);
+	void resolve_queue(vector<Node *> origin_pad_set);
+	void solve_queue(vector<Node *> pad_set_old);
+	void initialize_queue(vector<Node *> pad_set_old, queue <Node*> &q);
+	double update_single_iter(vector<Node *> pad_set_old);
+	double update_value(Node *nd);
+	double update_queue(queue<Node *>&q, Node *nd);
 	//////// end functions for pad ////////
 
 	// C style output

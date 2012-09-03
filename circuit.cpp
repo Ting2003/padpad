@@ -1682,8 +1682,8 @@ void Circuit::relocate_pads_graph(){
 		// actual move pads into the new spots
 		// project_pads();
 
-		resolve_direct();
-		//resolve_queue(origin_pad_set);
+		//resolve_direct();
+		resolve_queue(origin_pad_set);
 		//clog<<"max_IRS is: "<<max_IRS<<endl<<endl;
 	}
 	ref_drop_vec.clear();
@@ -2351,15 +2351,97 @@ void Circuit::resolve_direct(){
 		clog<<"single solve by cholmod is: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 }
 
-void Circuit::resolve_queue(vector<Pad *> pad_set_old){
+void Circuit::resolve_queue(vector<Node *> pad_set_old){
 	clock_t t1, t2;
 	t1 = clock();
 	//rebuild_voltage_nets();
-	//solve_queue();
+	solve_queue(pad_set_old);
 	//solve_LU_core();
 	double max_IR = locate_maxIRdrop();	
 	//double max_IRS = locate_special_maxIRdrop();
 	clog<<"max_IR by queue is: "<<max_IR<<endl;
 	t2 = clock();
 		clog<<"single solve by queue is: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
+}
+
+void Circuit::solve_queue(vector<Node *> pad_set_old){
+	double max_diff = 1;
+	double eps0 = 1e-5;	
+	while(max_diff > eps0){
+		max_diff = update_single_iter(pad_set_old);
+	}
+}
+
+double Circuit::update_single_iter(vector<Node *> pad_set_old){
+	queue <Node *> q;
+	double diff = 1;
+	double eps1 = 1e-5;
+	Node *nd;
+	double max_diff = 0;
+
+	// inserted varied pads into queue
+	initialize_queue(pad_set_old, q);
+	// start to expand and update nbr node values
+	while(!q.empty() && abs(diff) > eps1){
+		nd = q.front();
+		if(nd->isX() == false){
+			// update node value
+			diff = update_value(nd);
+			if(abs(diff) > max_diff)
+				max_diff = abs(diff);
+		}
+		update_queue(q, nd);
+		q.pop();
+	}
+	while(!q.empty()){
+		q.pop();
+	}
+	return max_diff;
+}
+
+double Circuit::update_value(Node *nd){
+}
+
+double Circuit::update_queue(queue<Node *>&q, Node *nd){
+}
+
+void Circuit::initialize_queue(vector<Node *> pad_set_old, queue <Node*> &q){
+	Pad *B;
+	Node *na;
+	Node *nb;
+	bool flag = false;
+	// insert moved old pads into queue
+	for(size_t i=0;i<pad_set_old.size();i++){
+		na = pad_set_old[i];
+		flag = false;
+		for(size_t j=0;j<pad_set.size();j++){
+			B = pad_set[j];
+			nb = B->node;
+			if(nb->name == na->name){
+				flag = true;
+				break;
+			}
+		}
+		if(flag == true)
+			continue;
+		q.push(na);	
+		
+	}
+	// insert moved new pads into queue
+	for(size_t i=0;i<pad_set.size();i++){
+		B = pad_set[i];
+		nb = B->node;
+		flag = false;
+		for(size_t j=0;j<pad_set_old.size();j++){
+			na = pad_set_old[j];
+			if(nb->name == na->name){
+				flag = true;
+				break;
+			}
+		}
+		if(flag == true)
+			continue;
+		q.push(nb);	
+		
+	}
 }
