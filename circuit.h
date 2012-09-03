@@ -139,6 +139,7 @@ public:
 	bool print_flag(Node *nd);
 	void move_violate_pads(vector<double> ref_drop_vec);
 	void modify_newxy();
+	void resolve_direct();
 	//////// end functions for pad ////////
 
 	// C style output
