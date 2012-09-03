@@ -140,6 +140,7 @@ public:
 	void move_violate_pads(vector<double> ref_drop_vec);
 	void modify_newxy();
 	void resolve_direct();
+	void resolve_queue(vector<Pad *> pad_set_old);
 	//////// end functions for pad ////////
 
 	// C style output

@@ -1683,10 +1683,13 @@ void Circuit::relocate_pads_graph(){
 		// project_pads();
 
 		resolve_direct();
+		//resolve_queue(origin_pad_set);
 		//clog<<"max_IRS is: "<<max_IRS<<endl<<endl;
 	}
 	ref_drop_vec.clear();
 	map_node_pt.clear();
+	origin_pad_set.clear();
+	pad_set_old.clear();
 	//print_pad_set();
 }
 
@@ -2346,4 +2349,17 @@ void Circuit::resolve_direct(){
 	clog<<"max_IR by cholmod is: "<<max_IR<<endl;
 	t2 = clock();
 		clog<<"single solve by cholmod is: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
+}
+
+void Circuit::resolve_queue(vector<Pad *> pad_set_old){
+	clock_t t1, t2;
+	t1 = clock();
+	//rebuild_voltage_nets();
+	//solve_queue();
+	//solve_LU_core();
+	double max_IR = locate_maxIRdrop();	
+	//double max_IRS = locate_special_maxIRdrop();
+	clog<<"max_IR by queue is: "<<max_IR<<endl;
+	t2 = clock();
+		clog<<"single solve by queue is: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 }
