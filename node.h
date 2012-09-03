@@ -58,7 +58,7 @@ public:
 	Net * nbr[6];		// neighboring nets
 
 	size_t rid;		// id in rep_list
-
+	bool flag_visited;
 	//////// member and function for pad //////
 	
 	// disable the flag of some pad node

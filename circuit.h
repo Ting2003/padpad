@@ -145,7 +145,8 @@ public:
 	void initialize_queue(vector<Node *> pad_set_old, queue <Node*> &q);
 	double update_single_iter(vector<Node *> pad_set_old);
 	double update_value(Node *nd);
-	double update_queue(queue<Node *>&q, Node *nd);
+	size_t update_queue(queue<Node *>&q, Node *nd);
+	void solve_GS();
 	//////// end functions for pad ////////
 
 	// C style output

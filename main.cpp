@@ -101,15 +101,19 @@ int main(int argc, char * argv[]){
 		if(ckt->get_name()=="VDD"){
 			clog<<"Solving "<<ckt->get_name()<<endl;
 			ckt->solve_init();
+			clock_t t1, t2;
+			t1 = clock();
 			ckt->solve();
+			t2 = clock();
+			clog<<"solve cost: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 			double max_IRdrop = ckt->locate_maxIRdrop();
 			
 			clog<<"max IRdrop is: "<<max_IRdrop<<endl;
 			double special_IRdrop = ckt->locate_special_maxIRdrop();
 			clog<<"special IRdrop is: "<<special_IRdrop<<endl;
 			//ckt->relocate_pads();
-			ckt->relocate_pads_graph();
-			ckt->print_matlab();
+			//ckt->relocate_pads_graph();
+			//ckt->print_matlab();
 			//ckt->print_pad_map();
 			//ckt->build_pad_set();
 			//cktlist[i]->print();
