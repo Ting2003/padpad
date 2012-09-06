@@ -1648,7 +1648,7 @@ void Circuit::relocate_pads_graph(){
 	
 	vector<double> ref_drop_vec;
 	//print_pad_set();
-	for(size_t i=0;i<1;i++){//12;i++){
+	for(size_t i=0;i<15;i++){//12;i++){
 		int pad_number = 1;
 		origin_pad_set.resize(pad_set.size());
 		assign_pad_set(origin_pad_set);
@@ -1661,6 +1661,8 @@ void Circuit::relocate_pads_graph(){
 		//print_all_control_nodes();	
 		if(i>=6)
 			dynamic_update_violate_ref(ref_drop_vec);
+		//if(i==10)
+			//extract_min_max_pads_new(ref_drop_vec);
 		// find new point for all pads	
 		dist = update_pad_pos_all(ref_drop_vec);		
 		// move the low 10% pads into high 10% 
@@ -1815,14 +1817,14 @@ double Circuit::update_pad_pos(double ref_drop_value, size_t i){
 			if(it->second > ref_drop_value)
 				continue;
 		 	  
-			if((pad_set[i]->node->name == "n0_30_74" ||
-			    pad_set[i]->node->name == "n0_135_104"||
-			    pad_set[i]->node->name == "n0_255_59")){
+			/*if((pad_set[i]->node->name == "n0_50_250" ||
+			    pad_set[i]->node->name == "n0_150_150"||
+			    pad_set[i]->node->name == "n0_100_500")){
 				//clog<<"data: "<<pad_set[i]->data<<endl;
 			  //cout<<"control node: "<<*it->first<<" "<<it->second<<endl;
 			 printf("%ld %ld  %.5e\n", it->first->pt.y+1, it->first->pt.x+1, it->first->value);
 			
-			}
+			}*/
 			nd = it->first;
 			weight = 1.0/it->second;
 			weighted_x += weight * nd->pt.x;
@@ -2592,4 +2594,21 @@ void Circuit::solve_GS(){
 }
 
 void Circuit::print_all_control_nodes(){
+	Pad *pad;
+	Node * nd;
+	
+	map<Node *, double>::iterator it;
+	for(size_t i=0;i<pad_set.size();i++){
+		pad = pad_set[i];
+		nd = pad->node;
+		if(nd->name == "n0_50_250" ||
+		   nd->name == "n0_150_150" ||
+		   nd->name == "n0_100_500"){
+			for(it = pad->control_nodes.begin();
+		    		it != pad->control_nodes.end();
+		    		it++){
+				printf("%ld %ld  %.5e\n", it->first->pt.y+1, it->first->pt.x+1, it->first->value);
+			}
+		}
+	}
 }
