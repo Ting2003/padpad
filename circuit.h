@@ -147,6 +147,7 @@ public:
 	double update_value(Node *nd);
 	size_t update_queue(queue<Node *>&q, Node *nd);
 	void solve_GS();
+	void print_all_control_nodes();
 	//////// end functions for pad ////////
 
 	// C style output

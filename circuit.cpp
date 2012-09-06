@@ -1648,7 +1648,7 @@ void Circuit::relocate_pads_graph(){
 	
 	vector<double> ref_drop_vec;
 	//print_pad_set();
-	for(size_t i=0;i<12;i++){
+	for(size_t i=0;i<1;i++){//12;i++){
 		int pad_number = 1;
 		origin_pad_set.resize(pad_set.size());
 		assign_pad_set(origin_pad_set);
@@ -1657,7 +1657,8 @@ void Circuit::relocate_pads_graph(){
 		// find control nodes for each pad
 		extract_pads(pad_number);
 		// find the tune spot for control nodes	
-		update_pad_control_nodes(ref_drop_vec, i);	
+		update_pad_control_nodes(ref_drop_vec, i);
+		//print_all_control_nodes();	
 		if(i>=6)
 			dynamic_update_violate_ref(ref_drop_vec);
 		// find new point for all pads	
@@ -2590,3 +2591,5 @@ void Circuit::solve_GS(){
 	}
 }
 
+void Circuit::print_all_control_nodes(){
+}
