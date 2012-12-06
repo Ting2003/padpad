@@ -114,7 +114,6 @@ public:
 	bool has_node_pt(string pt_name) const;
 	Node * get_node_pt(string pt_name);
 	void build_map_node_pt();
-	void relocate_pads();
 	void relocate_pads_graph();
 	void restore_pad_set(vector<Node*>&pad_set_old);
 	void assign_pad_set(vector<Node*>&pad_set_old);
@@ -123,7 +122,7 @@ public:
 	void extract_pads(int pad_number);
 	void print_matlab();
 	void clear_pad_control_nodes();
-	void update_pad_control_nodes(vector<double> & ref_drop_vec, size_t iter);
+	void update_pad_control_nodes(vector<double> & ref_drop_vec);
 	void extract_min_max_pads(vector<double> ref_drop_vec);
 	void extract_min_max_pads_new(vector<double> ref_drop_vec);
 
@@ -137,7 +136,7 @@ public:
 	double locate_ref(size_t i);
 	void dynamic_update_violate_ref(vector<double> & ref_drop_vec);
 	bool print_flag(Node *nd);
-	void move_violate_pads(vector<double> ref_drop_vec);
+	void move_violate_pads();
 	void modify_newxy();
 	void resolve_direct();
 	void resolve_queue(vector<Node *> origin_pad_set);
