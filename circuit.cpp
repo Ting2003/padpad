@@ -1588,17 +1588,29 @@ void Circuit::clear_pad_control_nodes(){
 
 void Circuit::relocate_pads_graph(){
 	vector<Node*> pad_set_old;
+	// record the best combi of pads
+	vector<Node *> pad_set_best;
 	double dist = 0;
 	//double new_dist = 0;
 	pad_set_old.resize(pad_set.size());
 	assign_pad_set(pad_set_old);
 	// store a original copy of the pad set
-	
+
+	// record initial case
+ 	pad_set_best.resize(pad_set.size());
+        for(size_t i=0;i<pad_set_best.size();i++){
+		pad_set_best[i] = new Node();
+		pad_set_best[i]->name = pad_set[i]->node->name;
+		//clog<<"i, pad_best: "<<i<<" "<<pad_set_best[i]->name<<endl;
+		pad_set_best[i]->pt = pad_set[i]->node->pt;
+	}
+
 	// build up the map for nodes in PAD layer
 	build_map_node_pt();
 	mark_special_nodes();
 	
 	vector<double> ref_drop_vec;
+	double min_IR = max_IRdrop;
 	//print_pad_set();
 	for(size_t i=0;i<12;i++){
 		int pad_number = 1;
@@ -1634,11 +1646,26 @@ void Circuit::relocate_pads_graph(){
 		// actual move pads into the new spots
 		// project_pads();
 		
-		resolve_direct();
+		double max_IR = resolve_direct();
+
+		if(max_IR ==0) break;
+		// cout<<endl;
+		if(max_IR < min_IR){
+			min_IR = max_IR;
+			for(size_t i=0;i<pad_set.size();i++){
+				pad_set_best[i]->name = pad_set[i]->node->name;
+				pad_set_best[i]->pt = pad_set[i]->node->pt;
+				// clog<<"i, pad_best: "<<i<<" "<<pad_set_best[i]->name<<endl;
+			}
+		}
 		//resolve_queue(origin_pad_set);
 		//solve_GS();
 		//clog<<"max_IRS is: "<<max_IRS<<endl<<endl;
 	}
+	// get the best pad set by name and pt
+	// copy the best node
+	recover_global_pad(pad_set_best);
+
 	ref_drop_vec.clear();
 	map_node_pt.clear();
 	origin_pad_set.clear();
@@ -2292,7 +2319,7 @@ void Circuit::move_violate_pads(){
 	}
 }
 
-void Circuit::resolve_direct(){
+double Circuit::resolve_direct(){
 	clock_t t1, t2;
 	t1 = clock();
 	rebuild_voltage_nets();
@@ -2303,6 +2330,7 @@ void Circuit::resolve_direct(){
 	clog<<"max_IR by cholmod is: "<<max_IR<<endl;
 	t2 = clock();
 		clog<<"single solve by cholmod is: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
+	return max_IR;
 }
 
 void Circuit::resolve_queue(vector<Node *> pad_set_old){
@@ -2543,5 +2571,39 @@ void Circuit::solve_GS(){
 	}
 }
 
-void Circuit::print_all_control_nodes(){
+void Circuit::recover_global_pad(vector<Node *> &pad_set_best){
+	clock_t t1, t2;
+	t1 = clock();
+	rebuild_voltage_nets_final(pad_set_best);
+
+	// need to repeat solve_init and stamp matrix
+	//pad_solve_DC();
+
+	double max_IR = locate_maxIRdrop();
+	double dev = compute_stand_dev();
+
+	clog<<"recovered global max_IR, dev is: "<<max_IR<<" "<<dev<<endl;
+	t2 = clock();
 }
+
+void Circuit::rebuild_voltage_nets_final(vector<Node *> & pad_set_best){
+}
+
+double Circuit::compute_stand_dev(){
+	double stand_dev = 0;
+	double average = 0;
+	double sum = 0;
+	for(size_t i=0;i<nodelist.size()-1;i++){
+		double IR_value = VDD - nodelist[i]->value;
+		sum += IR_value;
+	}
+	average = sum / nodelist.size()-1;
+	sum = 0;
+							        for(size_t i=0;i<nodelist.size()-1;i++){
+		double IR_value = VDD - nodelist[i]->value;
+		sum += (IR_value - average)*(IR_value - average);
+	}
+	stand_dev = sqrt(sum / (nodelist.size()-1));
+	return stand_dev;
+}
+

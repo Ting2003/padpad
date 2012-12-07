@@ -118,7 +118,9 @@ public:
 	void restore_pad_set(vector<Node*>&pad_set_old);
 	void assign_pad_set(vector<Node*>&pad_set_old);
 	void rebuild_voltage_nets();
+	void rebuild_voltage_nets_final(vector<Node *> & pad_set_best);
 	void print_pad_set();
+	double compute_stand_dev();
 	void extract_pads(int pad_number);
 	void print_matlab();
 	void clear_pad_control_nodes();
@@ -137,8 +139,9 @@ public:
 	void dynamic_update_violate_ref(vector<double> & ref_drop_vec);
 	bool print_flag(Node *nd);
 	void move_violate_pads();
+	void recover_global_pad(vector<Node *> &pad_set_best);
 	void modify_newxy();
-	void resolve_direct();
+	double resolve_direct();
 	void resolve_queue(vector<Node *> origin_pad_set);
 	void solve_queue(vector<Node *> pad_set_old);
 	void initialize_queue(vector<Node *> pad_set_old, queue <Node*> &q);
