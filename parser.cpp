@@ -288,10 +288,10 @@ void Parser::parse(char * filename){
 	}
 	fclose(f);
 	// release map_node resource
-	for(size_t i=0;i<(*p_ckts).size();i++){
+	/*for(size_t i=0;i<(*p_ckts).size();i++){
 		Circuit * ckt = (*p_ckts)[i];
 		ckt->map_node.clear();
-	}
+	}*/
 }// end of parse
 
 int Parser::get_num_layers() const{ return n_layer; }

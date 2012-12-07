@@ -67,6 +67,7 @@ Circuit::~Circuit(){
 	pad_set.clear();
 	special_nodes.clear();
 	map_node_pt.clear();
+	map_node.clear();
 	for(size_t i=0;i<nodelist.size();i++) delete nodelist[i];
 	for(int type=0;type<NUM_NET_TYPE;type++){
 		NetList & ns = net_set[type];
@@ -215,7 +216,8 @@ void Circuit::solve_init(){
 	// clog<<"nodelist   "<<nodelist.size()<<endl;
 	//clog<<"ratio =    "<<ratio  <<endl;*/
 	net_id.clear();
-	if(pad_set.size()==0)
+	//if(pad_set.size()==0)
+	clog<<endl<<" before build pad set. "<<endl;
 		build_pad_set();
 }
 
@@ -558,7 +560,6 @@ void Circuit::solve_LU_core(){
 	stamp_by_set(A, bp);
 	make_A_symmetric(bp);
 	//A.merge();
-
 	A.set_row(replist.size());
 	Algebra::solve_CK(A, x, b, cm, peak_mem, CK_mem);
 	
@@ -1217,6 +1218,7 @@ void Circuit::build_pad_set(){
 	//static Pad pad_a;
 	for(size_t i=0;i<nodelist.size()-1;i++){
 		if(nodelist[i]->isX()){
+			//clog<<"X node: "<<*nodelist[i]<<endl;
 			Pad *pad_ptr = new Pad();
 			pad_ptr->node = nodelist[i];
 			pad_set.push_back(pad_ptr);
@@ -1938,7 +1940,6 @@ Node * Circuit::pad_projection(Pad *pad, Node *nd){
 			pt_name = sstream.str();
 			if(has_node_pt(pt_name)){
 				nd_new = get_node_pt(pt_name);
-
 				//cout<<"new name: "<<*nd_new<<" "<<nd_new->isX()<<endl;
 				if(!nd_new->isX()){
 					nd->disableX();
@@ -2046,6 +2047,11 @@ void Circuit::rebuild_voltage_nets(){
 		net_set[type][index_rm_net] = add_net;
 		rm_node->nbr[TOP] = NULL;
 		add_node->nbr[TOP] = add_net;
+		//rm_node->disableX();
+		//add_node->enableX();
+		// clog<<"rm_X, add_X: "<<*rm_node<<" "<<rm_node->isX()<<" "<<*add_node<<" "<<add_node->isX()<<endl;
+		//add_node->value = VDD;
+		//rm_node->value = 0;*/
 	}
 	for(size_t i=0;i<rm_net.size();i++){
 		delete rm_net[i];
@@ -2578,7 +2584,7 @@ void Circuit::recover_global_pad(vector<Node *> &pad_set_best){
 	clock_t t1, t2;
 	t1 = clock();
 	rebuild_voltage_nets_final(pad_set_best);
-	clog<<"after rebuild voltage nets. "<<endl;
+	
 	// need to repeat solve_init and stamp matrix
 	pad_solve();
 
@@ -2597,7 +2603,7 @@ void Circuit::rebuild_voltage_nets_final(vector<Node *> & pad_set_best){
 	//Node *nd_ori=NULL;
 	//Node *nd_new=NULL;
 	Node *rm_node=NULL;
-	Node *add_node=NULL;
+	//Node *add_node=NULL;
 	vector<Net*> rm_net;
 
 	vector<bool> pad_set_process;
@@ -2620,15 +2626,15 @@ void Circuit::rebuild_voltage_nets_final(vector<Node *> & pad_set_best){
 			pad_best_process[j] = true;
 		}
 	}
-
+	stringstream sstream;
 	// delete all origin pad set
 	// and build nets of new pad set
 	for(size_t i=0;i<pad_set.size();i++){
-		// clog<<endl<<"nd_old, nd_new: "<<*pad_set[i]->node<<" "<<*pad_set_best[i]<<endl;
+		//clog<<endl<<"nd_old, nd_new: "<<*pad_set[i]->node<<" "<<pad_set[i]->node->isX()<<" "<<*pad_set_best[i]<<" "<<pad_set_best[i]->isX()<<endl;
 		if(pad_set_process[i]== true) continue;
 		pad_set_process[i] = true;
 
-		rm_node = pad_set[i]->node;
+		Node *rm_node = pad_set[i]->node;
 		if(rm_node->name == pad_set_best[i]->name)
 			continue;
 		//rm_node = pad_set_old[i];
@@ -2636,10 +2642,12 @@ void Circuit::rebuild_voltage_nets_final(vector<Node *> & pad_set_best){
 		for(j=0;j<pad_set.size();j++)
 			if(pad_best_process[j] == false)
 				break;
-		pad_best_process[j ] = true;
+		pad_best_process[j] = true;
 
-		add_node = pad_set_best[j];
-		// clog<<"nd_old, nd_new: "<<*rm_node<<" "<<*add_node<<endl;
+		string pt_name = pad_set_best[j]->name;
+		Node *add_node = get_node(pt_name);
+		if(add_node->isX()) continue;
+		//clog<<"nd_old, nd_new: "<<*rm_node<<" "<<*add_node<<endl;
 
 		for(size_t j=0;j<net_set[type].size();j++){
 			net = net_set[type][j];
@@ -2665,7 +2673,9 @@ void Circuit::rebuild_voltage_nets_final(vector<Node *> & pad_set_best){
 		add_node->nbr[TOP] = add_net;
 		pad_set[i]->node = add_node;
 
-		// clog<<"nd_old, nd_new: "<<*rm_node<<" "<<*add_node<<endl;
+		//clog<<"nodelist: "<<*replist[rm_node->rid]<<" "<<*replist[add_node->rid]<<endl;
+		//clog<<"pad_set[0]->node: "<<*pad_set[0]->node<<" "<<pad_set[0]->node->isX()<<endl;
+		//clog<<"nd_new, X: "<<*add_node<<" "<<add_node->isX()<<endl;
 	}
 	for(size_t i=0;i<rm_net.size();i++){
 		delete rm_net[i];
@@ -2693,7 +2703,5 @@ double Circuit::compute_stand_dev(){
 
 void Circuit::pad_solve(){
 	solve_init();
-	clog<<"after solve init. "<<endl;
 	solve_LU();
-	clog<<"after solve LU. "<<endl;
 }
