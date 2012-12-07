@@ -142,6 +142,7 @@ public:
 	void recover_global_pad(vector<Node *> &pad_set_best);
 	void modify_newxy();
 	double resolve_direct();
+	void pad_solve();
 	void resolve_queue(vector<Node *> origin_pad_set);
 	void solve_queue(vector<Node *> pad_set_old);
 	void initialize_queue(vector<Node *> pad_set_old, queue <Node*> &q);

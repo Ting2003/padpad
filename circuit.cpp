@@ -172,6 +172,8 @@ void Circuit::print(){
 // 3. find node in which block, update count
 // 4. get representative lists
 void Circuit::solve_init(){
+	replist.clear();
+	mergelist.clear();
 	sort_nodes();
 
 	size_t size = nodelist.size() - 1;
@@ -190,7 +192,6 @@ void Circuit::solve_init(){
 
 		// find the VDD value
 		if( p->isX() ) VDD = p->get_value();
-
 		// test short circuit
 		if( !p->isX() && // X must be representative 
 		    net != NULL &&
@@ -199,25 +200,23 @@ void Circuit::solve_init(){
 			assert( net->ab[1] != p );
 			p->rep = net->ab[1]->rep;
 		} // else the representative is itself
-
 		// push the representatives into list
 		if( p->rep == p ) {
 			replist.push_back(p);
 			p->rid = nr++;
 		}
 	}// end of for i
-
 	//size_t n_merge = mergelist.size();
 	//size_t n_nodes = nodelist.size();
 	//size_t n_reps  = replist.size();
 	//double ratio = n_merge / (double) (n_merge + n_reps);
-	/*clog<<"mergeable  "<<n_merge<<endl;
-	clog<<"replist    "<<n_reps <<endl;
-	clog<<"nodelist   "<<n_nodes<<endl;
-	clog<<"ratio =    "<<ratio  <<endl;*/
-
+	// clog<<"mergeable  "<<mergelist.size()<<endl;
+	// clog<<"replist    "<<replist.size() <<endl;
+	// clog<<"nodelist   "<<nodelist.size()<<endl;
+	//clog<<"ratio =    "<<ratio  <<endl;*/
 	net_id.clear();
-	build_pad_set();
+	if(pad_set.size()==0)
+		build_pad_set();
 }
 
 void Circuit::mark_special_nodes(){
@@ -1223,8 +1222,8 @@ void Circuit::build_pad_set(){
 			pad_set.push_back(pad_ptr);
 		}
 	}
-	//for(size_t j=0;j<pad_set.size();j++)
-		//clog<<"pad: "<<*pad_set[j]->node<<endl;
+	// for(size_t j=0;j<pad_set.size();j++)
+	//	clog<<"pad: "<<*pad_set[j]->node<<endl;
 }
 
 void Circuit::extract_pads(int pad_number){
@@ -1601,7 +1600,7 @@ void Circuit::relocate_pads_graph(){
         for(size_t i=0;i<pad_set_best.size();i++){
 		pad_set_best[i] = new Node();
 		pad_set_best[i]->name = pad_set[i]->node->name;
-		//clog<<"i, pad_best: "<<i<<" "<<pad_set_best[i]->name<<endl;
+		// clog<<"i, pad_best: "<<i<<" "<<pad_set_best[i]->name<<endl;
 		pad_set_best[i]->pt = pad_set[i]->node->pt;
 	}
 
@@ -1655,7 +1654,7 @@ void Circuit::relocate_pads_graph(){
 			for(size_t i=0;i<pad_set.size();i++){
 				pad_set_best[i]->name = pad_set[i]->node->name;
 				pad_set_best[i]->pt = pad_set[i]->node->pt;
-				// clog<<"i, pad_best: "<<i<<" "<<pad_set_best[i]->name<<endl;
+				//clog<<"i, pad_best: "<<i<<" "<<*pad_set_best[i]<<endl;
 			}
 		}
 		//resolve_queue(origin_pad_set);
@@ -2030,14 +2029,14 @@ void Circuit::rebuild_voltage_nets(){
 		rm_node = origin_pad_set[i];
 		//rm_node = pad_set_old[i];
 		add_node = pad_set[i]->node;
-		//clog<<"nd_old, nd_new: "<<*rm_node<<" "
+		//cout<<"nd_old, nd_new: "<<*rm_node<<" "
 			//<<*add_node<<endl;
 
-		for(size_t i=0;i<net_set[type].size();i++){
-			net = net_set[type][i];
+		for(size_t j=0;j<net_set[type].size();j++){
+			net = net_set[type][j];
 			if(net->ab[0]->name == rm_node->name ||
 					net->ab[1]->name == rm_node->name){
-				index_rm_net = i;
+				index_rm_net = j;
 				rm_net.push_back(net);
 				break;
 			}
@@ -2045,6 +2044,8 @@ void Circuit::rebuild_voltage_nets(){
 		add_net = new Net(VOLTAGE, VDD, add_node, 
 				nodelist[nodelist.size()-1]);
 		net_set[type][index_rm_net] = add_net;
+		rm_node->nbr[TOP] = NULL;
+		add_node->nbr[TOP] = add_net;
 	}
 	for(size_t i=0;i<rm_net.size();i++){
 		delete rm_net[i];
@@ -2329,7 +2330,7 @@ double Circuit::resolve_direct(){
 	//double max_IRS = locate_special_maxIRdrop();
 	clog<<"max_IR by cholmod is: "<<max_IR<<endl;
 	t2 = clock();
-		clog<<"single solve by cholmod is: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
+	// clog<<"single solve by cholmod is: "<<1.0*(t2-t1)/CLOCKS_PER_SEC<<endl;
 	return max_IR;
 }
 
@@ -2571,13 +2572,15 @@ void Circuit::solve_GS(){
 	}
 }
 
+
+// recover pads into pads_best
 void Circuit::recover_global_pad(vector<Node *> &pad_set_best){
 	clock_t t1, t2;
 	t1 = clock();
 	rebuild_voltage_nets_final(pad_set_best);
-
+	clog<<"after rebuild voltage nets. "<<endl;
 	// need to repeat solve_init and stamp matrix
-	//pad_solve_DC();
+	pad_solve();
 
 	double max_IR = locate_maxIRdrop();
 	double dev = compute_stand_dev();
@@ -2587,6 +2590,87 @@ void Circuit::recover_global_pad(vector<Node *> &pad_set_best){
 }
 
 void Circuit::rebuild_voltage_nets_final(vector<Node *> & pad_set_best){
+	int type = VOLTAGE;
+	size_t index_rm_net = 0;
+	Net *net=NULL;
+	Net *add_net=NULL;
+	//Node *nd_ori=NULL;
+	//Node *nd_new=NULL;
+	Node *rm_node=NULL;
+	Node *add_node=NULL;
+	vector<Net*> rm_net;
+
+	vector<bool> pad_set_process;
+	vector<bool> pad_best_process;
+	pad_set_process.resize(pad_set.size(), false);
+	pad_best_process.resize(pad_set.size(), false);
+
+	for(size_t i=0;i<pad_set.size();i++){
+		rm_node = pad_set[i]->node->rep;
+		bool flag = false;
+		size_t j=0;
+		for(j=0;j<pad_set.size();j++){
+			if(pad_set_best[j]->name == rm_node->name){
+				flag = true;
+				break;
+			}
+		}
+		if(flag == true){
+			pad_set_process[i] = true;
+			pad_best_process[j] = true;
+		}
+	}
+
+	// delete all origin pad set
+	// and build nets of new pad set
+	for(size_t i=0;i<pad_set.size();i++){
+		// clog<<endl<<"nd_old, nd_new: "<<*pad_set[i]->node<<" "<<*pad_set_best[i]<<endl;
+		if(pad_set_process[i]== true) continue;
+		pad_set_process[i] = true;
+
+		rm_node = pad_set[i]->node;
+		if(rm_node->name == pad_set_best[i]->name)
+			continue;
+		//rm_node = pad_set_old[i];
+		size_t j = 0;
+		for(j=0;j<pad_set.size();j++)
+			if(pad_best_process[j] == false)
+				break;
+		pad_best_process[j ] = true;
+
+		add_node = pad_set_best[j];
+		// clog<<"nd_old, nd_new: "<<*rm_node<<" "<<*add_node<<endl;
+
+		for(size_t j=0;j<net_set[type].size();j++){
+			net = net_set[type][j];
+			if(net->ab[0]->name == rm_node->name ||
+					net->ab[1]->name == rm_node->name){
+				index_rm_net = j;
+				rm_net.push_back(net);
+				break;
+			}
+		}
+		add_net = new Net(VOLTAGE, VDD, add_node, 
+				nodelist[nodelist.size()-1]);
+		net_set[type][index_rm_net] = add_net;
+
+		// clear X effect of rm_node
+		rm_node->disableX();
+		rm_node->value = 0;
+		rm_node->nbr[TOP] = NULL;
+		rm_node->rep = rm_node;
+
+		add_node->enableX();
+		add_node->value = VDD;
+		add_node->nbr[TOP] = add_net;
+		pad_set[i]->node = add_node;
+
+		// clog<<"nd_old, nd_new: "<<*rm_node<<" "<<*add_node<<endl;
+	}
+	for(size_t i=0;i<rm_net.size();i++){
+		delete rm_net[i];
+	}
+	//origin_pad_set.clear();
 }
 
 double Circuit::compute_stand_dev(){
@@ -2607,3 +2691,9 @@ double Circuit::compute_stand_dev(){
 	return stand_dev;
 }
 
+void Circuit::pad_solve(){
+	solve_init();
+	clog<<"after solve init. "<<endl;
+	solve_LU();
+	clog<<"after solve LU. "<<endl;
+}
